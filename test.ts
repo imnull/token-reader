@@ -1,12 +1,12 @@
-import { read, traverse, parse }from './src/jsonx'
+import { jsonx }from './src'
 
-let code = `callback(({a:1,  b: [{ccc:'ccc'}] }))`
+let code = `callback(([{a:1,  b: [{ccc:'ccc'}] },'2',3,,,6]))`
 
-const tail = read(code)
+const tail = jsonx.read(code)
 if(tail) {
-    traverse(tail, node => {
+    jsonx.traverse(tail, node => {
         console.log(node.depth, node.type, node.value)
     })
 }
 
-console.log(parse(code))
+console.log(jsonx.parse(code))
