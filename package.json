@@ -1,0 +1,16 @@
+{
+  "name": "token-reader",
+  "version": "1.0.0",
+  "description": "token reader compiler",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "ts-node test.ts"
+  },
+  "keywords": [
+    "token",
+    "reader",
+    "compiler"
+  ],
+  "author": "imnull@outlook.com",
+  "license": "ISC"
+}
