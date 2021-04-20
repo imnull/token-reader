@@ -1,12 +1,15 @@
-import { jsonx }from './src'
+import { xmlx }from './src'
 
-let code = `callback(([{a:1,  b: [{ccc:'ccc'}] },'2',3,,,6]))`
+let code = 
+`
+<ab== === ===>
+    <!-- 123
+    abc -->
+    <abc><abc>123</abc>
+</ab>
+`
 
-const tail = jsonx.read(code)
-if(tail) {
-    jsonx.traverse(tail, node => {
-        console.log(node.depth, node.type, node.value)
-    })
-}
+const doc = xmlx.parse(code)
 
-console.log(jsonx.parse(code))
+console.log(doc + '')
+console.log(doc.queryAll(n => n.nodeName === 'abc').map(n => n.toString()))

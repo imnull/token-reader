@@ -19,7 +19,7 @@ export type TToken<T> = TTokenBase & {
 }
 
 export type TTokenReader<T> = {
-    (content: string, start: number, parent: TToken<T>, previous: TToken<T>): TToken<T> | null
+    (content: string, start: number, parent: TToken<T> | null, previous: TToken<T> | null, initRelation?: boolean): TToken<T> | null
 }
 
 export type TReader<T> = {
@@ -27,3 +27,5 @@ export type TReader<T> = {
 }
 
 export type TTraverseCallback<T> = { (node: TToken<T>): void }
+
+export type TTokenCallback<T> = { (s: string, i: number, p: TToken<T>, t: TToken<T>): string | [string, string] | null }

@@ -1,3 +1,4 @@
 import * as jsonx from './jsonx'
+import * as xmlx from './xmlx'
 
-export { jsonx }
+export { jsonx, xmlx }
