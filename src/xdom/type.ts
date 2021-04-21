@@ -15,12 +15,22 @@ export type TNodeType =
     | 11 // DocumentFragment
     | 12 // Notation 代表一个符号在DTD中的声明
 
-export type TNodeBase = {
+
+export type TNodeMeta = {
     nodeType: TNodeType
     nodeName: string
+}
+
+export type TNodeBase = TNodeMeta & {
     setName(name: string): void
     remove(): void
 }
+
+export type TData = {
+    data: string
+}
+
+export type TDataNode = TNodeMeta & TData
 
 export type TNode = TNodeBase & {
     parentNode: TElement | null
@@ -28,19 +38,16 @@ export type TNode = TNodeBase & {
     previousSibling: TNode | null
 }
 
-export type TTextNode = TNode & {
-    data: string
-}
-
-export type TComment = TNode & {
-    data: string
-}
+export type TTextNode = TNode & TData
+export type TComment = TNode & TData
+export type TInstruction = TNode & TData
 
 export type TAttribute = TNodeBase & {
     name: string | undefined
     value: string | undefined
     parent: TAttributeList | null
     setValue(value: string): void
+    segments: TNode[]
 }
 
 export type TAttributeList = {
@@ -78,10 +85,15 @@ export type TElement = TNode & {
     queryAll(fn: { (node: TNode): boolean }): TNode[]
     each(fn: { (node: TNode): void }): void
     some(fn: { (node: TNode): any }): boolean
-    traverse(operators: TTraverseOperator[]): void
+    traverse(operators: TTraverseOperator[] | { [key: string]: { (node: TTraverseNode): void } } | { (node: TTraverseNode): void }): void
 }
 
-export type TTraverseNode = TNodeBase | ({ nodeType: 2 } & TAttribute) | ({ nodeType: 3 } & TTextNode) | ({ nodeType: 8 } & TComment) | ({ nodeType: 1 } & TElement)
+export type TTraverseNode = TNodeBase
+    | ({ nodeType: 1 } & TElement)
+    | ({ nodeType: 2 } & TAttribute)
+    | ({ nodeType: 3 } & TTextNode)
+    | ({ nodeType: 7 } & TInstruction)
+    | ({ nodeType: 8 } & TComment)
 export type TTraverseTester = number | string | RegExp | [number, TTraverseTester?] | { (node: TTraverseNode): boolean }
 export type TTraverseOperator = {
     test: TTraverseTester

@@ -1,4 +1,4 @@
-import { readQuote } from '../utils'
+import { readQuote, readMiniBinder } from '../utils'
 import { tokenReader, charReader } from '../reader'
 import { TXmlTokenType as T } from './type'
 import { TToken } from '../type'
@@ -24,7 +24,7 @@ const readers = [
         }
         return [m[0], m[1]]
     }, 1),
-    tokenReader<T>('element-comment', (s, i, parent) => {
+    tokenReader<T>('comment', (s, i, parent) => {
         if(isElementType(parent)) {
             return null
         }
@@ -33,6 +33,18 @@ const readers = [
             return null
         }
         return [m[0], m[1] || '']
+    }, 0),
+    tokenReader<T>('instruction', (s, i, parent) => {
+        if(isElementType(parent)) {
+            return null
+        }
+        if(s.substring(i, i + 2) === '{{') {
+            const binder = readMiniBinder(s, i)
+            if(binder) {
+                return [binder, binder.slice(2, -2)]
+            }
+        }
+        return null
     }, 0),
     tokenReader<T>('element-end', (s, i, parent) => {
         if(isElementType(parent) && s.charAt(i) === '>') {
@@ -112,4 +124,4 @@ const readers = [
     
 ]
 
-export const read = charReader<T>(readers, 'plain')
+export const read = charReader<T>(readers, 'text')

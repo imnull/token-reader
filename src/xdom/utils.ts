@@ -1,4 +1,5 @@
 import { TTraverseTester, TTraverseNode, TNodeBase } from "./type"
+import { readMiniBinderIndex } from '../utils'
 
 export const QUOTES = '"\''
 
@@ -32,4 +33,26 @@ export const traverseTest = (node: TNodeBase, tester: TTraverseTester) => {
     } else {
         return tester(node)
     }
+}
+
+export const splitBinder = (str: string) => {
+    const arr: { type: 'text' | 'binder', data: string }[] = []
+    let start: number = 0
+    for(let i = start, len = str.length; i < len; i++) {
+        if(str.substring(i, i + 2) === '{{') {
+            const end = readMiniBinderIndex(str, i)
+            if(end > -1) {
+                if(i > start) {
+                    arr.push({ type: 'text', data: str.substring(start, i) })
+                }
+                arr.push({ type: 'binder', data: str.substring(i, end).slice(2, -2) })
+                start = end
+                i = start - 1
+            }
+        }
+    }
+    if(start < str.length) {
+        arr.push({ type: 'text', data: str.substring(start) })
+    }
+    return arr
 }

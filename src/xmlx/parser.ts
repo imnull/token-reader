@@ -33,7 +33,7 @@ export const parse = (content: string) => {
                 break
             case 'attribute-name':
                 attr = node
-                cursor.attributes.setAttribute(node.value, '')
+                cursor.attributes.setAttribute(node.value, null)
                 break
             case 'attribute-value':
                 cursor.attributes.setAttribute(attr.value, node.value)
@@ -50,11 +50,14 @@ export const parse = (content: string) => {
                 cursor.isSingle = false
                 cursor.attributes.trimEnd()
                 break
-            case 'plain':
+            case 'text':
                 cursor.appendChild(doc.createTextNode(node.value))
                 break
-            case 'element-comment':
+            case 'comment':
                 cursor.appendChild(doc.createCommen(node.value))
+                break
+            case 'instruction':
+                cursor.appendChild(doc.createInstruction(node.value))
                 break
         }
     })

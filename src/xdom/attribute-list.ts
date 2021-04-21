@@ -3,45 +3,45 @@ import { XAttributeBlank, XAttribute } from "./attribute";
 
 export default class XAttributeList implements TAttributeList {
 
-    private readonly __attrs: TAttribute[]
+    private readonly attrs: TAttribute[]
 
     constructor() {
-        this.__attrs = []
+        this.attrs = []
     }
     
     append(attr: TAttribute) {
         const last = this.getLastAttribute()
         if((!last || last.nodeType !== 0) && attr.nodeType === 2) {
-            this.__attrs.push(new XAttributeBlank(' ', this))
+            this.attrs.push(new XAttributeBlank(' ', this))
         }
         attr.remove()
         attr.parent = this
-        this.__attrs.push(attr)
+        this.attrs.push(attr)
     }
 
     remove(attr: TAttribute) {
-        const idx = this.__attrs.indexOf(attr)
+        const idx = this.attrs.indexOf(attr)
         if(idx < 0) {
             return false
         }
         const blankIndex = idx - 1
-        if(blankIndex > -1 && this.__attrs[blankIndex].nodeType !== 2) {
-            this.__attrs.splice(blankIndex, 2)
+        if(blankIndex > -1 && this.attrs[blankIndex].nodeType !== 2) {
+            this.attrs.splice(blankIndex, 2)
         } else {
-            this.__attrs.splice(idx, 1)
+            this.attrs.splice(idx, 1)
         }
         return true
     }
 
     getLastAttribute() {
-        if(this.__attrs.length < 1) {
+        if(this.attrs.length < 1) {
             return null
         }
-        return this.__attrs[this.__attrs.length - 1]
+        return this.attrs[this.attrs.length - 1]
     }
     
     findAttribute(callback: { (attr: TAttribute, index: number, array: TAttribute[]): boolean }) {
-        return this.__attrs.filter(attr => attr.nodeType === 2).find(callback)
+        return this.attrs.filter(attr => attr.nodeType === 2).find(callback)
     }
 
     findAttributeByName(name: string) {
@@ -75,21 +75,21 @@ export default class XAttributeList implements TAttributeList {
     }
 
     forEach(callback: { (attr: TAttribute, index: number, array: TAttribute[]): void }) {
-        return this.__attrs.filter(attr => attr.nodeType === 2).forEach(callback)
+        return this.attrs.filter(attr => attr.nodeType === 2).forEach(callback)
     }
 
     map<T>(callback: { (attr: TAttribute, index: number, array: TAttribute[]): T }) {
-        return this.__attrs.filter(attr => attr.nodeType === 2).map<T>(callback)
+        return this.attrs.filter(attr => attr.nodeType === 2).map<T>(callback)
     }
     trimEnd() {
         let attr = this.getLastAttribute()
         while(attr && attr.nodeType === 0) {
-            this.__attrs.pop()
+            this.attrs.pop()
             attr = this.getLastAttribute()
         }
     }
 
     toString() {
-        return this.__attrs.map(attr => attr.toString()).join('')
+        return this.attrs.map(attr => attr.toString()).join('')
     }
 }

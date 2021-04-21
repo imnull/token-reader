@@ -1,4 +1,4 @@
-import { TElement, TNodeType, TAttributeList, TNode, TComment, TTextNode, TTraverseOperator, TNodeBase, TTraverseNode } from "./type";
+import { TElement, TNodeType, TAttributeList, TNode, TComment, TTextNode, TTraverseOperator, TNodeBase, TTraverseNode, TInstruction } from "./type";
 import XAttributeList from './attribute-list';
 import { traverseTest } from './utils'
 
@@ -192,9 +192,13 @@ export class XElement extends XNode implements TElement {
         node.appendChild(this)
     }
 
-    traverse(operators: TTraverseOperator[] | { [key: string]: { (node: TTraverseNode): void } }) {
+    traverse(operators: TTraverseOperator[] | { [key: string]: { (node: TTraverseNode): void } } | { (node: TTraverseNode): void }) {
         let ops: TTraverseOperator[]
-        if(!Array.isArray(operators)) {
+
+        // format operators
+        if(typeof operators === 'function') {
+            ops = [{ test: () => true, use: operators }]
+        } else if(!Array.isArray(operators)) {
             ops = Object.keys(operators).map(key => {
                 try {
                     return { test: new RegExp(key), use: operators[key] }
@@ -206,19 +210,22 @@ export class XElement extends XNode implements TElement {
             ops = operators
         }
 
-        const nodes: TNodeBase[] = []
-        this.each(node => {
-            nodes.push(node)
-            if(node instanceof XElement) {
-                node.attributes.forEach(attr => {
-                    nodes.push(attr)
-                })
-            }
-        })
-
-        nodes.forEach(node => {
+        // create invoker
+        const invoke = (node: TNodeBase) => {
             const op = ops.find(({ test }) => traverseTest(node, test))
             op && op.use(node)
+        }
+
+        this.each(node => {
+            invoke(node)
+            if(node instanceof XElement) {
+                node.attributes.forEach(attr => {
+                    invoke(attr)
+                    attr.segments.forEach(seg => {
+                        invoke(seg)
+                    })
+                })
+            }
         })
     }
 
@@ -247,6 +254,15 @@ export class XComment extends XDataNode implements TComment {
     }
 }
 
+export class XInstruction extends XDataNode implements TInstruction {
+    constructor(data: string = '') {
+        super(data, '#instruction', 7)
+    }
+    toString() {
+        return `{{${super.toString()}}}`
+    }
+}
+
 export class XDocument extends XElement {
     public get nodeType(): TNodeType {
         return 9
@@ -265,6 +281,10 @@ export class XDocument extends XElement {
 
     public createCommen(data: string) {
         return new XComment(data)
+    }
+
+    public createInstruction(data: string) {
+        return new XInstruction(data)
     }
 
     toString() {

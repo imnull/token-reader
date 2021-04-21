@@ -1,16 +1,65 @@
-import { TAttribute, TNodeType, TAttributeList } from './type'
-import { quotify, QUOTES } from './utils';
+import { TAttribute, TNodeType, TAttributeList, TDataNode, TTextNode, TElement, TNode, TInstruction } from './type'
+import { quotify, QUOTES, splitBinder } from './utils';
+
+class XSegmentText implements TTextNode {
+    setName(_name: string): void { }
+    remove(): void { }
+    public get parentNode(): TElement { return null }
+    public get nextSibling(): TNode { return null }
+    public get previousSibling(): TNode { return null }
+    public get nodeName() {
+        return '#text'
+    }
+    public get nodeType() {
+        return 3 as TNodeType
+    }
+
+    public readonly data: string
+    constructor(data: string) {
+        this.data = data
+    }
+
+    toString() { return this.data }
+}
+class XSegmentBinder implements TInstruction {
+    setName(_name: string): void { }
+    remove(): void { }
+    public get parentNode(): TElement { return null }
+    public get nextSibling(): TNode { return null }
+    public get previousSibling(): TNode { return null }
+
+    public get nodeName() {
+        return '#instruction'
+    }
+    public get nodeType() {
+        return 7 as TNodeType
+    }
+
+    public readonly data: string
+    constructor(data: string) {
+        this.data = data
+    }
+
+    toString() { return `{{${this.data}}}` }
+}
 
 export class XAttribute implements TAttribute {
 
     public name: string
-    public value: string
+    public get value() {
+        return this.segments.map(seg => seg.toString()).join('')
+    }
+    private rawValue: string
     private quote: string
+    private hasSetValue: boolean
 
     public parent: TAttributeList
+    public segments: TNode[]
 
     constructor(name: string, value: any, parent: TAttributeList) {
         this.parent = parent
+        this.hasSetValue = false
+        this.segments = []
         this.setName(name)
         this.setValue(value)
     }
@@ -23,27 +72,41 @@ export class XAttribute implements TAttribute {
         return 2
     }
 
-    setValue(value: any) {
-        if(value === false || value === null || (typeof value === 'number' && isNaN(value))) {
-            this.value = ''
-            this.quote = '"'
-        } else if(value === true || typeof value === 'undefined') {
-            this.value = void(0)
+    setSegments() {
+        if(!this.rawValue) {
+            this.segments = []
         } else {
-            if(typeof value !== 'string') {
-                value = JSON.stringify(value)
-            }
-            const q = quotify(value, QUOTES)
-            this.value = q.value
-            this.quote = q.quote
+            const segs = splitBinder(this.rawValue)
+            this.segments = segs.map(({ type, data }) => {
+                if(type === 'text') {
+                    return new XSegmentText(data)
+                } else {
+                    return new XSegmentBinder(data)
+                }
+            })
         }
     }
 
+    setValue(value: any) {
+        if(value === null || typeof value === 'undefined') {
+            return
+        }
+        this.hasSetValue = true
+        if(typeof value !== 'string') {
+            value = JSON.stringify(value)
+        }
+        const q = quotify(value, QUOTES)
+        this.rawValue = q.value
+        this.quote = q.quote
+
+        this.setSegments()
+    }
+
     getValue() {
-        if(this.value === 'undefined') {
+        if(this.rawValue === 'undefined') {
             return true
         }
-        return this.value
+        return this.rawValue
     }
 
     setName(name: string) {
@@ -51,11 +114,10 @@ export class XAttribute implements TAttribute {
     }
 
     toString() {
-        let val = typeof this.value === 'undefined' || this.value === null ? '' : (this.value + '')
-        if(!val) {
+        if(!this.hasSetValue) {
             return this.name
         }
-        return `${this.name}=${this.quote}${val}${this.quote}`
+        return `${this.name}=${this.quote}${this.value}${this.quote}`
     }
     remove() {
         this.parent && this.parent.remove(this)
@@ -66,6 +128,7 @@ export class XAttributeBlank implements TAttribute {
     public name: string
     public value: string
     public parent: TAttributeList
+    public segments: TNode[]
 
     get nodeName(): string {
         return ''
@@ -84,6 +147,7 @@ export class XAttributeBlank implements TAttribute {
 
     constructor(s: string, parent: TAttributeList) {
         this.parent = parent
+        this.segments = []
         this.setValue(s)
     }
 
