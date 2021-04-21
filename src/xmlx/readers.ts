@@ -41,11 +41,15 @@ const readers = [
         return null
     }, 2),
     tokenReader<T>('element-single', (s, i, parent) => {
-        if(parent && parent.type === 'element' && s.charAt(i) === '/') {
-            return '/'
+        if(!isElementType(parent)) {
+            return null
         }
-        return null
-    }, 0),
+        const m = s.substring(i).match(/^\/\s*\>/)
+        if(!m) {
+            return null
+        }
+        return m[0]
+    }, 2),
     tokenReader<T>('element-close', (s, i, parent) => {
         if(isElementType(parent)) {
             return null
@@ -56,7 +60,7 @@ const readers = [
         }
         return [m[0], m[1]]
     }, 0),
-    tokenReader<T>('blank', (s, i, parent) => {
+    tokenReader<T>('element-blank', (s, i, parent) => {
         if(isElementType(parent)) {
             const m = s.substring(i).match(/^\s+/)
             if(!m) {
@@ -66,14 +70,14 @@ const readers = [
         }
         return null
     }, 0),
-    tokenReader<T>('equal', (s, i, parent, previous) => {
+    tokenReader<T>('attribute-equal', (s, i, parent, previous) => {
         if(isElementType(parent) && previous && previous.type === 'attribute-name' && s.charAt(i) === '=') {
             return '='
         }
         return null
     }, 0),
     tokenReader<T>('attribute-name', (s, i, parent, previous) => {
-        if(isElementType(parent) && previous && previous.type !== 'equal') {
+        if(isElementType(parent) && previous && previous.type !== 'attribute-equal') {
             const m = s.substring(i).match(/^[^\s][^\s\=\>\/]*/)
             if(!m) {
                 return null
@@ -83,7 +87,7 @@ const readers = [
         return null
     }, 0),
     tokenReader<T>('attribute-value', (s, i, parent, previous) => {
-        if(isElementType(parent) && previous && previous.type === 'equal') {
+        if(isElementType(parent) && previous && previous.type === 'attribute-equal') {
             if(['"', "'"].indexOf(s.charAt(i)) > -1) {
                 const quote = readQuote(s, i)
                 if(!quote) {
@@ -108,4 +112,4 @@ const readers = [
     
 ]
 
-export const read = charReader<T>(readers, 'root', 'plain')
+export const read = charReader<T>(readers, 'plain')

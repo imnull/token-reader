@@ -1,6 +1,6 @@
-import { TTokenBase, TToken } from "./type"
+import { TTokenBase, TToken, TTokenLite } from "./type"
 
-export const getFirstNode = <T>(node: TToken<T>) => {
+export const getFirstNode = <T>(node: TToken<T> | TTokenLite<T>) => {
 
     if(!node) {
         return null
@@ -10,11 +10,13 @@ export const getFirstNode = <T>(node: TToken<T>) => {
         node = node.parent
     }
 
-    while(node.previous) {
-        node = node.previous
+    let n: any = node
+
+    while(n.previous) {
+        n = n.previous
     }
 
-    return node
+    return n
 }
 
 export const readQuote = (str: string, start: number = 0): string => {

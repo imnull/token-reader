@@ -224,7 +224,7 @@ export class XElement extends XNode implements TElement {
 
     toString() {
         if(this.isSingle) {
-            return `<${this.nodeName}${this.attributes}/>`
+            return `<${this.nodeName}${this.attributes} />`
         } else {
             const closure = this.isClosed ? `</${this.nodeName}>` : `</${this.nodeName}>`
             return `<${this.nodeName}${this.attributes}>${this.childNodes.map(n => n.toString()).join('')}${closure}`

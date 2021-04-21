@@ -1,11 +1,11 @@
-import { xmlx }from './src'
+import { xmlx } from './src'
 
-let code = 
+let code =
 `
-<ab== === ===>
+<ab== ====>
     <!-- 123
     abc -->
-    <abc>
+    <abc xyz /  >
     <abc><abc>123</abc>
 </ab>
 `
