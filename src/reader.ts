@@ -1,18 +1,4 @@
-import { TToken, TTokenReader, TReader, TTokenBase, TTokenCallback, TCallbackReader, TTokenLite, TTokenLiteReader, TTokenLiteCallback } from './type'
-import { getFirstNode } from './utils'
-
-const initToken = (token: TTokenBase, previous: TTokenBase, parent: TTokenBase) => {
-
-    token.parent = parent
-    token.depth = parent ? parent.depth + 1 : 0
-
-    if (previous) {
-        previous.next = token
-    }
-    if (parent && !parent.first) {
-        parent.first = token
-    }
-}
+import { TToken, TTokenReader, TReader, TTokenBase, TTokenCallback, TCallbackReader, TTokenLite, TTokenLiteReader, TTokenLiteCallback, TRecurrentCallbackReader } from './type'
 
 export const stringReader = <T>(
     type: T,
@@ -28,6 +14,7 @@ export const stringReader = <T>(
                 value: seg,
                 parent,
                 type,
+                originType: type,
                 depth: parent ? parent.depth + 1 : 0,
                 nest,
             }
@@ -51,6 +38,7 @@ export const regReader = <T>(
                 value: seg,
                 parent,
                 type,
+                originType: type,
                 depth: parent ? parent.depth + 1 : 0,
                 nest,
             }
@@ -71,14 +59,17 @@ export const callReader = <T>(
                 start: i,
                 parent,
                 type,
+                originType: type,
                 depth: parent ? parent.depth + 1 : 0,
                 nest,
                 end: s.length,
                 value: ''
             }
             if (Array.isArray(seg)) {
-                token.end = i + seg[0].length
-                token.value = seg[1]
+                const [raw, val = raw, t = type] = seg
+                token.end = i + raw.length
+                token.value = val
+                token.type = t
             } else {
                 token.end = i + seg.length
                 token.value = seg
@@ -91,7 +82,7 @@ export const callReader = <T>(
 
 export const tokenReader = <T>(
     type: T,
-    expression: string | RegExp | TTokenCallback<T>,
+    expression: string | RegExp | TTokenLiteCallback<T>,
     nest: 0 | 1 | 2
 ): TTokenLiteReader<T> => {
     if (typeof expression === 'string') {
@@ -104,32 +95,30 @@ export const tokenReader = <T>(
     return null
 }
 
-export const createReader = <T>(readers: TTokenLiteReader<T>[]): TReader<T> => {
-    const reader = (content: string, start: number = 0, previous: TTokenLite<T> = null, parent: TTokenLite<T> = null) => {
+export const recurrentReader = <T>(readers: TTokenLiteReader<T>[], leftType: T): TRecurrentCallbackReader<T> => {
+    const reader: TRecurrentCallbackReader<T> = (content, callback, start = 0, previous = null, parent = null) => {
         let token: TTokenLite<T> = null
+        const m = content.substring(start).match(/^\s+/)
+        if(m) {
+            start += m[0].length
+        }
         if (readers.some(r => {
             token = r(content, start, previous, parent)
             return !!token
         })) {
+            callback(token)
             const { end } = token
-            if (end > start) {
-                if (token.nest === 0) {
-                    previous = token
-                } else if (token.nest === 1) {
-                    parent = token
-                    previous = null
-                } else if (token.nest === 2) {
-                    previous = parent
-                    parent = previous ? previous.parent : null
-                }
-                return reader(content, end, previous, parent)
+            if (token.nest === 0) {
+                previous = token
+            } else if (token.nest === 1) {
+                parent = token
+                previous = null
+            } else if (token.nest === 2) {
+                previous = parent
+                parent = previous ? previous.parent : null
             }
+            reader(content, callback, end, previous, parent)
         }
-        let n = token || previous
-        if (n) {
-            n = getFirstNode<T>(n)
-        }
-        return n
     }
     return reader
 }
@@ -151,6 +140,7 @@ export const charReader = <T>(readers: TTokenLiteReader<T>[], leftType: T): TCal
                 if (token.start - leftStart > 0) {
                     const leftToken: TTokenLite<T> = {
                         type: leftType,
+                        originType: leftType,
                         start: leftStart,
                         end: token.start,
                         parent,
@@ -178,6 +168,7 @@ export const charReader = <T>(readers: TTokenLiteReader<T>[], leftType: T): TCal
         if (leftStart < content.length) {
             const leftToken: TTokenLite<T> = {
                 type: leftType,
+                originType: leftType,
                 start: leftStart,
                 end: content.length,
                 parent,

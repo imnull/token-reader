@@ -1,8 +1,13 @@
 export type TJsonTokenType =
-    'plain'
+    'id'
     | 'null'
     | 'undefined'
     | 'number'
+    | 'string'
+    | 'property-name'
+    | 'property-value'
+    | 'array-value'
+    | 'array-comma'
     | 'blank'   // 空白字符
     | 'comma'   // 逗号
     | 'colon'   // 冒号

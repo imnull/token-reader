@@ -1,16 +1,10 @@
 import { readQuote, readMiniBinder } from '../utils'
 import { tokenReader, charReader } from '../reader'
 import { TXmlTokenType as T } from './type'
-import { TToken } from '../type'
+import { TToken, TTokenLite } from '../type'
 
-const group: {
-    [key: string]: T[]
-} = {
-    element: ['element'],
-}
-
-const isElementType = (token: TToken<T>) => {
-    return token && token.nest === 1 && group.element.indexOf(token.type) > -1 
+const isElementType = (token: TTokenLite<T>) => {
+    return token && token.nest === 1 && ['element'].indexOf(token.type) > -1 
 }
 
 const readers = [

@@ -20,6 +20,7 @@ export type TToken<T> = TTokenBase & {
 
 export type TTokenLite<T> = {
     type: T
+    originType: T
     start: number
     end: number
     value: string
@@ -44,5 +45,11 @@ export type TCallbackReader<T> = {
     (content: string, callback: { (node: TTokenLite<T>): void }, start?: number): void
 }
 
+export type TRecurrentCallbackReader<T> = {
+    (content: string, callback: { (node: TTokenLite<T>): void }, start?: number, previous?: TTokenLite<T>, parent?: TTokenLite<T>): void
+}
+
+
+
 export type TTokenCallback<T> = { (s: string, i: number, p: TToken<T>, t: TToken<T>): string | [string, string] | null }
-export type TTokenLiteCallback<T> = { (s: string, i: number, p: TTokenLite<T>, t: TTokenLite<T>): string | [string, string] | null }
+export type TTokenLiteCallback<T> = { (s: string, i: number, p: TTokenLite<T>, t: TTokenLite<T>): string | [string, string, T?] | null }

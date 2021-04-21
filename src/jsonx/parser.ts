@@ -71,7 +71,7 @@ const parse_value = (node: TToken<TJsonTokenType>) => {
         case 'null': return null
         case 'undefined': return void(0)
         case 'quote': return node.value.slice(1, -1)
-        case 'plain': return node.value
+        case 'id': return node.value
         case 'number': return Number(node.value)
         case 'bracket': return parse_bracket(node)
         case 'braces': return parse_braces(node)
@@ -81,10 +81,5 @@ const parse_value = (node: TToken<TJsonTokenType>) => {
 
 
 export const parse = (content: string) => {
-    const node = read(content)
-    let n = node
-    while(n.next) {
-        n = n.next
-    }
-    return parse_value(n)
+    
 }

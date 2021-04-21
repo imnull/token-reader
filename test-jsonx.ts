@@ -1,4 +1,4 @@
-import { jsonx }from './src'
+import { jsonx } from './src'
 
 let code = `callback(([{a:1,  b: [{ccc:'ccc'}] },'2',3,,,6]))`
 
