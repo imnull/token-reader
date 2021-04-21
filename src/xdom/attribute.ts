@@ -1,4 +1,4 @@
-import { TAttribute, TNodeType } from './type'
+import { TAttribute, TNodeType, TAttributeList } from './type'
 import { quotify, QUOTES } from './utils';
 
 export class XAttribute implements TAttribute {
@@ -7,7 +7,10 @@ export class XAttribute implements TAttribute {
     public value: string
     private quote: string
 
-    constructor(name: string, value: any) {
+    public parent: TAttributeList
+
+    constructor(name: string, value: any, parent: TAttributeList) {
+        this.parent = parent
         this.setName(name)
         this.setValue(value)
     }
@@ -54,11 +57,15 @@ export class XAttribute implements TAttribute {
         }
         return `${this.name}=${this.quote}${val}${this.quote}`
     }
+    remove() {
+        this.parent && this.parent.remove(this)
+    }
 }
 
 export class XAttributeBlank implements TAttribute {
     public name: string
     public value: string
+    public parent: TAttributeList
 
     get nodeName(): string {
         return ''
@@ -69,17 +76,22 @@ export class XAttributeBlank implements TAttribute {
     }
 
     setName(name: string) {
-        return
+        this.name = name
     }
     setValue(value: string) {
         this.value = value
     }
 
-    constructor(s: string = '') {
+    constructor(s: string, parent: TAttributeList) {
+        this.parent = parent
         this.setValue(s)
     }
 
     toString() {
         return this.value
+    }
+
+    remove() {
+        this.parent && this.parent.remove(this)
     }
 }

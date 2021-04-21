@@ -2,6 +2,7 @@ import { TAttribute, TAttributeList } from "./type";
 import { XAttributeBlank, XAttribute } from "./attribute";
 
 export default class XAttributeList implements TAttributeList {
+
     private readonly __attrs: TAttribute[]
 
     constructor() {
@@ -11,9 +12,25 @@ export default class XAttributeList implements TAttributeList {
     append(attr: TAttribute) {
         const last = this.getLastAttribute()
         if((!last || last.nodeType !== 0) && attr.nodeType === 2) {
-            this.__attrs.push(new XAttributeBlank(' '))
+            this.__attrs.push(new XAttributeBlank(' ', this))
         }
+        attr.remove()
+        attr.parent = this
         this.__attrs.push(attr)
+    }
+
+    remove(attr: TAttribute) {
+        const idx = this.__attrs.indexOf(attr)
+        if(idx < 0) {
+            return false
+        }
+        const blankIndex = idx - 1
+        if(blankIndex > -1 && this.__attrs[blankIndex].nodeType !== 2) {
+            this.__attrs.splice(blankIndex, 2)
+        } else {
+            this.__attrs.splice(idx, 1)
+        }
+        return true
     }
 
     getLastAttribute() {
@@ -39,10 +56,14 @@ export default class XAttributeList implements TAttributeList {
     setAttribute(name: string, value: any) {
         const attr = this.findAttributeByName(name)
         if(!attr) {
-            this.append(new XAttribute(name, value))
+            this.append(new XAttribute(name, value, this))
         } else {
             attr.setValue(value)
         }
+    }
+
+    appendBlank(blank: string) {
+        this.append(new XAttributeBlank(blank, this))
     }
 
     removeAttribute(name: string) {
@@ -50,14 +71,7 @@ export default class XAttributeList implements TAttributeList {
         if(!attr) {
             return false
         }
-        const idx = this.__attrs.indexOf(attr)
-        const blankIndex = idx - 1
-        if(blankIndex > -1 && this.__attrs[blankIndex].nodeType !== 2) {
-            this.__attrs.splice(blankIndex, 2)
-        } else {
-            this.__attrs.splice(idx, 1)
-        }
-        return true
+        return this.remove(attr)
     }
 
     forEach(callback: { (attr: TAttribute, index: number, array: TAttribute[]): void }) {
@@ -78,6 +92,4 @@ export default class XAttributeList implements TAttributeList {
     toString() {
         return this.__attrs.map(attr => attr.toString()).join('')
     }
-
-    
 }

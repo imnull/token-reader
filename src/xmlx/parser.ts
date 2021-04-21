@@ -1,5 +1,5 @@
-import { XDocument, XAttribute, XAttributeBlank } from './dom'
-import { TElement } from './dom/type'
+import { XDocument, XAttributeBlank } from '../xdom'
+import { TElement } from '../xdom/type'
 import { read } from './readers'
 import createTraverse from '../traverse'
 import { TXmlTokenType } from './type'
@@ -41,7 +41,7 @@ export const parse = (content: string) => {
                 cur.attributes.setAttribute(nameNode.value, node.value)
                 break
             case 'blank':
-                cur.attributes.append(new XAttributeBlank(node.value))
+                cur.attributes.appendBlank(node.value)
                 break
             case 'element-single':
                 if (node.next && node.next.type === 'element-end') {

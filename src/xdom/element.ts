@@ -1,5 +1,6 @@
-import { TElement, TNodeType, TAttributeList, TNode } from "./type";
+import { TElement, TNodeType, TAttributeList, TNode, TComment, TTextNode, TTraverseOperator, TNodeBase, TTraverseNode } from "./type";
 import XAttributeList from './attribute-list';
+import { traverseTest } from './utils'
 
 const rebuildChain = (node: TNode) => {
     if(node.previousSibling) {
@@ -17,7 +18,7 @@ class XNode implements TNode {
     }
 
     public get nodeName(): string {
-        return this._nodeName
+        return this.__nodeName
     }
 
     public parentNode: TElement
@@ -25,16 +26,24 @@ class XNode implements TNode {
     public nextSibling: TNode
 
     private readonly __nodeType: TNodeType
-    protected _nodeName: string
+    private __nodeName: string
 
     constructor(name: string, type: TNodeType) {
 
-        this._nodeName = name
+        this.__nodeName = name
         this.__nodeType = type
 
         this.parentNode = null
         this.previousSibling = null
         this.nextSibling = null
+    }
+
+    setName(name: string) {
+        this.__nodeName = name
+    }
+
+    remove(): void {
+        this.parentNode && this.parentNode.removeChild(this)
     }
 }
 
@@ -53,10 +62,6 @@ class XDataNode extends XNode implements TNode {
 }
 
 export class XElement extends XNode implements TElement {
-
-    public get nodeType(): TNodeType {
-        return 1
-    }
 
     public isSingle: boolean
     public isClosed: boolean
@@ -86,10 +91,6 @@ export class XElement extends XNode implements TElement {
         this.childNodes = []
     }
 
-    setNodeName(name: string) {
-        return this._nodeName = name
-    }
-
     getAttribute(name: string) {
         return this.attributes.getAttribute(name)
     }
@@ -98,15 +99,6 @@ export class XElement extends XNode implements TElement {
     }
     removeAttribute(name: string) {
         return this.attributes.removeAttribute(name)
-    }
-
-    toString() {
-        if(this.isSingle) {
-            return `<${this.nodeName}${this.attributes}/>`
-        } else {
-            const closure = this.isClosed ? `</${this.nodeName}>` : `</${this.nodeName}>`
-            return `<${this.nodeName}${this.attributes}>${this.childNodes.map(n => n.toString()).join('')}${closure}`
-        }
     }
 
     removeChild(node: TNode) {
@@ -158,47 +150,95 @@ export class XElement extends XNode implements TElement {
         this.childNodes.splice(idx, 0, newNode)
         return newNode
     }
-
-    query(fn: { (node: TNode): boolean }): TNode | null {
+    each(fn: { (node: TNode): void }): void {
+        let node = this.firstChild || null
+        while(node) {
+            fn(node)
+            node instanceof XElement && node.each(fn)
+            node = node.nextSibling
+        }
+    }
+    some(fn: { (node: TNode): any }): boolean {
         let node = this.firstChild || null
         while(node) {
             if(fn(node)) {
-                return node
+                return true
             }
             if(node instanceof XElement) {
-                const sub = node.query(fn)
-                if(sub) {
-                    return sub
+                if(node.some(fn)) {
+                    return true
                 }
             }
             node = node.nextSibling
         }
-        return node
+        return false
     }
-
+    query(fn: { (node: TNode): boolean }): TNode | null {
+        let node: TNode | null = null
+        return this.some(n => fn(node = n)) ? node : null
+    }
     queryAll(fn: { (node: TNode): boolean }): TNode[] {
         const arr: TNode[] = []
-        let node = this.firstChild || null
-        while(node) {
-            if(fn(node)) {
-                arr.push(node)
-            }
-            if(node instanceof XElement) {
-                arr.push(...node.queryAll(fn))
-            }
-            node = node.nextSibling
-        }
+        this.each(node => {
+            fn(node) && arr.push(node)
+        })
         return arr
+    }
+    append(node: TNode): void {
+        this.appendChild(node)
+    }
+    
+    appendTo(node: TElement): void {
+        node.appendChild(this)
+    }
+
+    traverse(operators: TTraverseOperator[] | { [key: string]: { (node: TTraverseNode): void } }) {
+        let ops: TTraverseOperator[]
+        if(!Array.isArray(operators)) {
+            ops = Object.keys(operators).map(key => {
+                try {
+                    return { test: new RegExp(key), use: operators[key] }
+                } catch(ex) {
+                    return { test: key, use: operators[key] }
+                }
+            })
+        } else {
+            ops = operators
+        }
+
+        const nodes: TNodeBase[] = []
+        this.each(node => {
+            nodes.push(node)
+            if(node instanceof XElement) {
+                node.attributes.forEach(attr => {
+                    nodes.push(attr)
+                })
+            }
+        })
+
+        nodes.forEach(node => {
+            const op = ops.find(({ test }) => traverseTest(node, test))
+            op && op.use(node)
+        })
+    }
+
+    toString() {
+        if(this.isSingle) {
+            return `<${this.nodeName}${this.attributes}/>`
+        } else {
+            const closure = this.isClosed ? `</${this.nodeName}>` : `</${this.nodeName}>`
+            return `<${this.nodeName}${this.attributes}>${this.childNodes.map(n => n.toString()).join('')}${closure}`
+        }
     }
 }
 
-export class XTextNode extends XDataNode implements TNode {
+export class XTextNode extends XDataNode implements TTextNode {
     constructor(data: string = '') {
         super(data, '#text', 3)
     }
 }
 
-export class XComment extends XDataNode implements TNode {
+export class XComment extends XDataNode implements TComment {
     constructor(data: string = '') {
         super(data, '#comment', 8)
     }
