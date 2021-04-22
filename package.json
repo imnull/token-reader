@@ -1,23 +1,27 @@
 {
   "name": "token-reader",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "token reader compiler",
-  "main": "./dist/es5/index.js",
+  "main": "./dist/index.js",
+  "module": "./es-lib/index.js",
   "exports": {
     ".": [
       {
-        "import": "./dist/es6/index.js",
-        "require": "./dist/es5/index.js",
-        "default": "./dist/es5/index.js"
+        "import": "./dist/index.js",
+        "require": "./dist/index.js",
+        "default": "./dist/index.js"
       },
-      "./dist/es5/index.js"
-    ]
+      "./dist/index.js"
+    ],
+    "./xmlx": "./dist/xmlx/index.js",
+    "./xdom": "./dist/xdom/index.js",
+    "./jsonx": "./dist/jsonx/index.js"
   },
   "scripts": {
     "test": "jest",
-    "build:es5": "rm -rf ./dist/es5 && tsc --project tsconfig.es5.json",
-    "build:es6": "rm -rf ./dist/es6 && tsc --project tsconfig.es6.json",
-    "build": "rm -rf ./dist && npm run build:es5 && npm run build:es6"
+    "build:es5": "rm -rf ./dist && tsc --project tsconfig.es5.json",
+    "build:es6": "rm -rf ./es-lib && tsc --project tsconfig.es6.json",
+    "build": "npm run build:es5 && npm run build:es6"
   },
   "keywords": [
     "token",
@@ -27,6 +31,6 @@
   "author": "imnull@outlook.com",
   "license": "ISC",
   "devDependencies": {
-    
+    "jest": "^26.6.3"
   }
 }

@@ -1,5 +1,6 @@
 node_modules
 dist
+es-lib
 build
 .DS_Store
 package-lock.json
