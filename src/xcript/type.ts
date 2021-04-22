@@ -7,7 +7,18 @@ export type TJsonTokenType =
     | 'date'
 
     | 'declare'
-    | 'assign'
+    | 'return'
+    | 'if'
+    | 'else'
+    | 'while'
+    | 'switch'
+    | 'case'
+    | 'break'
+
+    | 'assign'  // =
+    | 'unary'   // + - ~ ! typeof void
+    | 'logical' // && ||
+    | 'binary' // + - * / % ^ | & > >= < <= == != === !== >> >>> <<
     
     | 'blank'   // 空白字符
     | 'comma'   // 逗号
