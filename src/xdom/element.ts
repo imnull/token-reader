@@ -1,6 +1,7 @@
 import { TElement, TNodeType, TAttributeList, TNode, TComment, TTextNode, TTraverseOperator, TNodeBase, TTraverseNode, TInstruction } from "./type";
 import XAttributeList from './attribute-list';
 import { traverseTest } from './utils'
+import { arrayFind } from "../polyfill";
 
 const rebuildChain = (node: TNode) => {
     if(node.previousSibling) {
@@ -212,7 +213,7 @@ export class XElement extends XNode implements TElement {
 
         // create invoker
         const invoke = (node: TNodeBase) => {
-            const op = ops.find(({ test }) => traverseTest(node, test))
+            const op = arrayFind(ops, ({ test }) => traverseTest(node, test))
             op && op.use(node)
         }
 

@@ -1,5 +1,6 @@
 import { TAttribute, TAttributeList } from "./type";
 import { XAttributeBlank, XAttribute } from "./attribute";
+import { arrayFind } from '../polyfill'
 
 export default class XAttributeList implements TAttributeList {
 
@@ -40,8 +41,8 @@ export default class XAttributeList implements TAttributeList {
         return this.attrs[this.attrs.length - 1]
     }
     
-    findAttribute(callback: { (attr: TAttribute, index: number, array: TAttribute[]): boolean }) {
-        return this.attrs.filter(attr => attr.nodeType === 2).find(callback)
+    findAttribute(callback: { (attr: TAttribute, index: number): boolean }) {
+        return arrayFind(this.attrs.filter(attr => attr.nodeType === 2), callback)
     }
 
     findAttributeByName(name: string) {
