@@ -46,12 +46,12 @@ export default class XAttributeList implements TAttributeList {
     }
 
     findAttributeByName(name: string) {
-        return this.findAttribute(attr => attr.name === name)
+        return this.findAttribute(attr => attr.nodeName === name)
     }
     
     getAttribute(name: string) {
         const attr = this.findAttributeByName(name)
-        return attr ? attr.value : null
+        return attr ? attr.nodeValue : null
     }
 
     setAttribute(name: string, value: any) {
@@ -75,13 +75,18 @@ export default class XAttributeList implements TAttributeList {
         return this.remove(attr)
     }
 
-    forEach(callback: { (attr: TAttribute, index: number, array: TAttribute[]): void }) {
+    each(callback: { (attr: TAttribute): void }) {
         return this.attrs.filter(attr => attr.nodeType === 2).forEach(callback)
     }
 
-    map<T>(callback: { (attr: TAttribute, index: number, array: TAttribute[]): T }) {
-        return this.attrs.filter(attr => attr.nodeType === 2).map<T>(callback)
+    some(callback: (attr: TAttribute) => boolean): boolean {
+        return this.attrs.filter(attr => attr.nodeType === 2).some(callback)
     }
+
+    find(callback: (attr: TAttribute) => boolean): TAttribute {
+        return this.attrs.filter(attr => attr.nodeType === 2).find(callback)
+    }
+ 
     trimEnd() {
         let attr = this.getLastAttribute()
         while(attr && attr.nodeType === 0) {

@@ -1,25 +1,15 @@
 import { readQuote } from '../utils'
 import { tokenReader, recurrentReader } from '../reader'
 import { TJsonTokenType as T } from './type'
+import { REG_NUMBER, REG_ID, readString } from '../readers'
 
-const REG_NUMBER = /^([\+\-]\s*)?([\d\.]+[eE][\+\-]?\d+|0?\.\d+|[1-9]\d*(\.(\d+)?)?|0)/
-const REG_ID = /^[\$_a-zA-Z]+[a-zA-Z$\d_]*/
 
 const readers = [
     tokenReader<T>('null', 'null', 0),
     tokenReader<T>('undefined', 'undefined', 0),
     tokenReader<T>('id', REG_ID, 0),
     tokenReader<T>('number', REG_NUMBER, 0),
-    tokenReader<T>('string', (s, i, parent, previous) => {
-        const ch = s.charAt(i)
-        if(['"', "'"].indexOf(ch) > -1) {
-            const str = readQuote(s, i)
-            if(str) {
-                return [str, str.slice(1, -1)]
-            }
-        }
-        return null
-    }, 0),
+    tokenReader<T>('string', readString, 0),
     tokenReader<T>('comma', (s, i, parent) => {
         const char = s.charAt(i)
         if(char !== ',') {

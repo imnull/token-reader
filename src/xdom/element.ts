@@ -151,21 +151,37 @@ export class XElement extends XNode implements TElement {
         this.childNodes.splice(idx, 0, newNode)
         return newNode
     }
-    each(fn: { (node: TNode): void }): void {
+    each(fn: { (node: TNodeBase): void }): void {
         let node = this.firstChild || null
         while(node) {
             fn(node)
-            node instanceof XElement && node.each(fn)
+            if(node instanceof XElement) {
+                node.attributes.each(attr => {
+                    fn(attr)
+                    attr.segments.forEach(seg => {
+                        fn(seg)
+                    })
+                })
+                node.each(fn)
+            }
             node = node.nextSibling
         }
     }
-    some(fn: { (node: TNode): any }): boolean {
+    some(fn: { (node: TNodeBase): boolean }): boolean {
         let node = this.firstChild || null
         while(node) {
             if(fn(node)) {
                 return true
             }
             if(node instanceof XElement) {
+                if(node.attributes.some(attr => {
+                    if(fn(attr)) {
+                        return true
+                    }
+                    return attr.segments.some(fn)
+                })) {
+                    return true
+                }
                 if(node.some(fn)) {
                     return true
                 }
@@ -174,12 +190,12 @@ export class XElement extends XNode implements TElement {
         }
         return false
     }
-    query(fn: { (node: TNode): boolean }): TNode | null {
-        let node: TNode | null = null
+    query(fn: { (node: TNodeBase): boolean }): TNodeBase | null {
+        let node: TNodeBase | null = null
         return this.some(n => fn(node = n)) ? node : null
     }
-    queryAll(fn: { (node: TNode): boolean }): TNode[] {
-        const arr: TNode[] = []
+    queryAll(fn: { (node: TNodeBase): boolean }): TNodeBase[] {
+        const arr: TNodeBase[] = []
         this.each(node => {
             fn(node) && arr.push(node)
         })
@@ -217,17 +233,7 @@ export class XElement extends XNode implements TElement {
             op && op.use(node)
         }
 
-        this.each(node => {
-            invoke(node)
-            if(node instanceof XElement) {
-                node.attributes.forEach(attr => {
-                    invoke(attr)
-                    attr.segments.forEach(seg => {
-                        invoke(seg)
-                    })
-                })
-            }
-        })
+        this.each(invoke)
     }
 
     toString() {

@@ -43,8 +43,7 @@ export type TComment = TNode & TData
 export type TInstruction = TNode & TData
 
 export type TAttribute = TNodeBase & {
-    name: string | undefined
-    value: string | undefined
+    nodeValue: string | undefined
     parent: TAttributeList | null
     setValue(value: string): void
     segments: TNode[]
@@ -56,7 +55,9 @@ export type TAttributeList = {
     getAttribute(name: string): string
     setAttribute(name: string, value: any): void
     removeAttribute(name: string): boolean
-    forEach(callback: { (attr: TAttribute, index: number, array: TAttribute[]): void }): void
+    some(fn: { (node: TAttribute): boolean }): boolean
+    each(callback: { (attr: TAttribute): void }): void
+    find(callback: { (attr: TAttribute): boolean }): TAttribute | null
     trimEnd(): void
     appendBlank(blank: string): void
 }
@@ -81,10 +82,10 @@ export type TElement = TNode & {
     append(node: TNode): void
     appendTo(node: TElement): void
 
-    query(fn: { (node: TNode): boolean }): TNode | null
-    queryAll(fn: { (node: TNode): boolean }): TNode[]
-    each(fn: { (node: TNode): void }): void
-    some(fn: { (node: TNode): any }): boolean
+    query(fn: { (node: TNodeBase): boolean }): TNodeBase | null
+    queryAll(fn: { (node: TNodeBase): boolean }): TNodeBase[]
+    each(fn: { (node: TNodeBase): void }): void
+    some(fn: { (node: TNodeBase): boolean }): boolean
     traverse(operators: TTraverseOperator[] | { [key: string]: { (node: TTraverseNode): void } } | { (node: TTraverseNode): void }): void
 }
 

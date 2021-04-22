@@ -2,6 +2,7 @@ import { readQuote, readMiniBinder } from '../utils'
 import { tokenReader, charReader } from '../reader'
 import { TXmlTokenType as T } from './type'
 import { TTokenLite } from '../type'
+import { readMinipBinder } from '../readers'
 
 const isElementType = (token: TTokenLite<T>) => {
     return token && token.nest === 1 && ['element'].indexOf(token.type) > -1 
@@ -32,13 +33,7 @@ const readers = [
         if(isElementType(parent)) {
             return null
         }
-        if(s.substring(i, i + 2) === '{{') {
-            const binder = readMiniBinder(s, i)
-            if(binder) {
-                return [binder, binder.slice(2, -2)]
-            }
-        }
-        return null
+        return readMinipBinder(s, i)
     }, 0),
     tokenReader<T>('element-end', (s, i, parent) => {
         if(isElementType(parent) && s.charAt(i) === '>') {

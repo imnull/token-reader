@@ -45,10 +45,11 @@ class XSegmentBinder implements TInstruction {
 
 export class XAttribute implements TAttribute {
 
-    public name: string
-    public get value() {
+    public nodeName: string
+    public get nodeValue() {
         return this.segments.map(seg => seg.toString()).join('')
     }
+
     private rawValue: string
     private quote: string
     private hasSetValue: boolean
@@ -62,10 +63,6 @@ export class XAttribute implements TAttribute {
         this.segments = []
         this.setName(name)
         this.setValue(value)
-    }
-
-    get nodeName(): string {
-        return this.name || ''
     }
 
     get nodeType(): TNodeType {
@@ -110,14 +107,14 @@ export class XAttribute implements TAttribute {
     }
 
     setName(name: string) {
-        this.name = name
+        this.nodeName = name
     }
 
     toString() {
         if(!this.hasSetValue) {
-            return this.name
+            return this.nodeName
         }
-        return `${this.name}=${this.quote}${this.value}${this.quote}`
+        return `${this.nodeName}=${this.quote}${this.nodeValue}${this.quote}`
     }
     remove() {
         this.parent && this.parent.remove(this)
@@ -125,24 +122,20 @@ export class XAttribute implements TAttribute {
 }
 
 export class XAttributeBlank implements TAttribute {
-    public name: string
-    public value: string
+    public nodeName: string
+    public nodeValue: string
     public parent: TAttributeList
     public segments: TNode[]
-
-    get nodeName(): string {
-        return ''
-    }
 
     get nodeType(): TNodeType {
         return 0
     }
 
     setName(name: string) {
-        this.name = name
+        this.nodeName = name
     }
     setValue(value: string) {
-        this.value = value
+        this.nodeValue = value
     }
 
     constructor(s: string, parent: TAttributeList) {
@@ -152,7 +145,7 @@ export class XAttributeBlank implements TAttribute {
     }
 
     toString() {
-        return this.value
+        return this.nodeValue
     }
 
     remove() {
