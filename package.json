@@ -2,10 +2,22 @@
   "name": "token-reader",
   "version": "1.0.0",
   "description": "token reader compiler",
-  "main": "dist/index.js",
+  "main": "./dist/es5/index.js",
+  "exports": {
+    ".": [
+      {
+        "import": "./dist/es6/index.js",
+        "require": "./dist/es5/index.js",
+        "default": "./dist/es5/index.js"
+      },
+      "./dist/es5/index.js"
+    ]
+  },
   "scripts": {
     "test": "jest",
-    "build": "rm -rf ./dist && tsc ./src/index.ts --target es5 --declaration --outDir ./dist"
+    "build:es5": "rm -rf ./dist/es5 && tsc --project tsconfig.es5.json",
+    "build:es6": "rm -rf ./dist/es6 && tsc --project tsconfig.es6.json",
+    "build": "rm -rf ./dist && npm run build:es5 && npm run build:es6"
   },
   "keywords": [
     "token",
@@ -15,6 +27,6 @@
   "author": "imnull@outlook.com",
   "license": "ISC",
   "devDependencies": {
-    "jest": "^26.6.3"
+    
   }
 }

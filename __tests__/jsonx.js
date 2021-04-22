@@ -1,4 +1,4 @@
-const { jsonx } = require('../dist')
+const { jsonx } = require('../dist/es5')
 
 test('[jsonx] 括号解析取值', () => {
     expect(jsonx.parse(`(,,,,,,1,,,,2,,,,,3,,)`)).toEqual(3)
