@@ -4,6 +4,7 @@ export type TJsonTokenType =
     | 'undefined'
     | 'number'
     | 'string'
+    | 'date'
     
     | 'blank'   // 空白字符
     | 'comma'   // 逗号

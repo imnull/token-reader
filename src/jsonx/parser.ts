@@ -10,6 +10,8 @@ const getNodeValue = (node: TTokenLite<TJsonTokenType>) => {
     switch(node.originType) {
         case 'number':
             return Number(node.value)
+        case 'date':
+            return new Date(node.value)
         case 'null':
             return null
         case 'undefined':
@@ -118,6 +120,7 @@ const update = (stack: any[], node: TTokenLite<TJsonTokenType>) => {
             endNest(stack, BRACKET_SYMBOL)
             break
         case 'id':
+        case 'date':
         case 'string':
         case 'number':
         case 'null':

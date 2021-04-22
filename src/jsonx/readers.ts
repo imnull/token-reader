@@ -1,12 +1,13 @@
 import { readQuote } from '../utils'
 import { tokenReader, recurrentReader } from '../reader'
 import { TJsonTokenType as T } from './type'
-import { REG_NUMBER, REG_ID, readString } from '../readers'
+import { REG_NUMBER, REG_ID, REG_DATE, readString } from '../readers'
 
 
 const readers = [
     tokenReader<T>('null', 'null', 0),
     tokenReader<T>('undefined', 'undefined', 0),
+    tokenReader<T>('date', REG_DATE, 0),
     tokenReader<T>('id', REG_ID, 0),
     tokenReader<T>('number', REG_NUMBER, 0),
     tokenReader<T>('string', readString, 0),

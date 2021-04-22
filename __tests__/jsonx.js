@@ -1,5 +1,25 @@
 const { jsonx } = require('../dist')
 
+test('[jsonx] 基础类型解析', () => {
+    expect(jsonx.parse(`"abc"`)).toEqual('abc')
+    expect(jsonx.parse(`'abc'`)).toEqual('abc')
+    expect(jsonx.parse(`abc`)).toEqual('abc')
+    expect(jsonx.parse(`123`)).toEqual(123)
+    expect(jsonx.parse(`undefined`)).toEqual(undefined)
+    expect(jsonx.parse(`null`)).toEqual(null)
+    expect(jsonx.parse(`2021-04-22T02:37:47.123Z`).getTime()).toEqual(1619059067123)
+    expect(jsonx.parse(`2021-04-22T02:37:47.123`).getTime()).toEqual(1619030267123)
+    expect(jsonx.parse(`2021-04-22T02:37:47Z`).getTime()).toEqual(1619059067000)
+    expect(jsonx.parse(`2021-04-22T02:37:47`).getTime()).toEqual(1619030267000)
+    expect(jsonx.parse(`2021-04-22T02:37Z`).getTime()).toEqual(1619059020000)
+    expect(jsonx.parse(`2021-04-22T02:37`).getTime()).toEqual(1619030220000)
+    expect(jsonx.parse(`2021-04T02:37Z`).getTime()).toEqual(1617244620000)
+    expect(jsonx.parse(`2021-04T02:37`).getTime()).toEqual(1617215820000)
+    expect(jsonx.parse(`2021T02:37Z`).getTime()).toEqual(1609468620000)
+    expect(jsonx.parse(`2021T02:37`).getTime()).toEqual(1609439820000)
+})
+
+
 test('[jsonx] 括号解析取值', () => {
     expect(jsonx.parse(`(,,,,,,1,,,,2,,,,,3,,)`)).toEqual(3)
     expect(jsonx.parse(`1,,1,2,,3,4,5,6,,2,3,9`)).toEqual(9)
