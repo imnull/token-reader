@@ -1,85 +1,137 @@
-import { TToken } from '../type'
+import { TTokenLite } from '../type'
 import { TJsonTokenType } from './type'
 import { read } from './readers'
 
-const parse_braces = (node: TToken<TJsonTokenType>) => {
-    const arr: [string?, any?][] = []
-    let cursor: [string?, any?] = []
-    let n = node.first, i = 0
-    while(n) {
-        switch(n.type) {
-            case 'colon':
-                i = 1
-                break
-            case 'comma':
-                i = 0
-                break
-            case 'braces-end':
-            case 'blank':
-                break
-            default:
-                cursor[i] = parse_value(n)
-                if(cursor.length > 1) {
-                    arr.push(cursor)
-                    cursor = []
-                }
-                console.log(2222, 'len', cursor.length)
-                break
+const PARENTHESES_SYMBOL = { type: 'parentheses' }
+const BRACES_SYMBOL = { type: 'braces' }
+const BRACKET_SYMBOL = { type: 'bracket' }
+
+const getNodeValue = (node: TTokenLite<TJsonTokenType>) => {
+    switch(node.originType) {
+        case 'number':
+            return Number(node.value)
+        case 'null':
+            return null
+        case 'undefined':
+            return void(0)
+        case 'parentheses':
+            return PARENTHESES_SYMBOL
+        case 'braces':
+            return BRACES_SYMBOL
+        case 'bracket':
+            return BRACKET_SYMBOL
+    }
+    return node.value
+}
+
+const endNest = (stack: any[], type: any) => {
+
+    let finVal = stack.pop(), resurse: any[] = []
+    while(stack.length > 0 && stack[stack.length - 1] !== type) {
+        resurse.push(stack.pop())
+    }
+
+    if(resurse.length === 2) {
+        resurse[1][resurse[0]] = finVal
+        finVal = resurse[1]
+    }
+    if(stack.length > 0) {
+        stack.pop()
+    }
+    stack.push(finVal)
+}
+
+const stepUp = (stack: any[], type: any) => {
+    let step: number = 0
+    for(let i = stack.length - 1; i >= 0; i--) {
+        if(stack[i] === type) {
+            break
         }
-        n = n.next
+        step += 1
     }
-    return arr
-        .filter(c => c.length === 2 && typeof c[0] === 'string')
-        .reduce((r, [key, value]) => ({ [key]: value, ...r }), {})
-    return arr
+    return step
 }
 
-const parse_bracket = (node: TToken<TJsonTokenType>) => {
-    const arr: TToken<TJsonTokenType>[] = []
-    let n = node.first, i = 0
-    while(n) {
-        switch(n.type) {
-            case 'comma':
-                i += 1
-                break
-            default:
-                arr[i] = n
-                break
-        }
-        n = n.next
+const emptyStack = (stack: any[], type: any, clear: boolean = false) => {
+    while(stack.length > 0 && stack[stack.length - 1] !== type) {
+        stack.pop()
     }
-    return arr.map(n => n ? parse_value(n) : void(0))
+    if(stack.length > 0 && clear) {
+        stack.pop()
+    }
 }
 
-const parse_parentheses = (node: TToken<TJsonTokenType>) => {
-    let n = node.first
-    if(!n) {
-        return void(0)
-    }
-    while(n.next) {
-        n = n.next
-    }
-    return parse_value(n)
-}
-
-const parse_value = (node: TToken<TJsonTokenType>) => {
-    if(!node) {
-        return void(0)
-    }
-
+const update = (stack: any[], node: TTokenLite<TJsonTokenType>) => {
     switch(node.type) {
-        case 'null': return null
-        case 'undefined': return void(0)
-        case 'quote': return node.value.slice(1, -1)
-        case 'id': return node.value
-        case 'number': return Number(node.value)
-        case 'bracket': return parse_bracket(node)
-        case 'braces': return parse_braces(node)
-        case 'parentheses': return parse_parentheses(node)
+        case 'parentheses':
+            stack.push(getNodeValue(node))
+            stack.push(void(0))
+            break
+        case 'parentheses-comma':
+            if(stepUp(stack, PARENTHESES_SYMBOL) === 2) {
+                const tmp = stack.pop()
+                stack[stack.length - 1] = tmp
+            }
+            break
+        case 'parentheses-end':
+            const parenthesesVal = stack.pop()
+            emptyStack(stack, PARENTHESES_SYMBOL, true)
+            stack.push(parenthesesVal)
+            break
+        case 'braces':
+            stack.push(getNodeValue(node))
+            stack.push({})
+            break
+        case 'braces-comma':
+            if(stepUp(stack, BRACES_SYMBOL) === 3) {
+                const propVal = stack.pop()
+                const propName = stack.pop()
+                stack[stack.length - 1][propName] = propVal
+            }
+            break
+        case 'braces-end':
+            if(stepUp(stack, BRACES_SYMBOL) === 2) {
+                stack.push(stack[stack.length - 1])
+            }
+            endNest(stack, BRACES_SYMBOL)
+            break
+        case 'bracket':
+            stack.push(getNodeValue(node))
+            stack.push([])
+            stack.push(0)
+            break
+        case 'bracket-comma':
+            const settingStep = stepUp(stack, BRACKET_SYMBOL)
+            if(settingStep === 3) {
+                let arrVal = stack.pop()
+                let arrIdx = stack.pop()
+                stack[stack.length - 1][arrIdx] = arrVal
+                stack.push(arrIdx + 1)
+            } else if(settingStep === 2) {
+                stack[stack.length - 1] += 1
+            }
+            break
+        case 'bracket-end':
+            if(stepUp(stack, BRACKET_SYMBOL) === 2) {
+                stack.pop()
+            }
+            endNest(stack, BRACKET_SYMBOL)
+            break
+        case 'id':
+        case 'string':
+        case 'number':
+        case 'null':
+        case 'undefined':
+            stack.push(getNodeValue(node))
+            break
     }
+    
 }
-
 
 export const parse = (content: string) => {
-    
+    const stack: any[] = []
+    read(content, node => {
+        update(stack, node)
+    })
+    return stack.pop()
 }

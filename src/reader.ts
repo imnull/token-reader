@@ -1,4 +1,4 @@
-import { TToken, TTokenReader, TReader, TTokenBase, TTokenCallback, TCallbackReader, TTokenLite, TTokenLiteReader, TTokenLiteCallback, TRecurrentCallbackReader } from './type'
+import { TCallbackReader, TTokenLite, TTokenLiteReader, TTokenLiteCallback, TRecurrentCallbackReader } from './type'
 
 export const stringReader = <T>(
     type: T,

@@ -1,24 +1,3 @@
-import { TToken, TTokenLite } from "./type"
-
-export const getFirstNode = <T>(node: TToken<T> | TTokenLite<T>) => {
-
-    if(!node) {
-        return null
-    }
-
-    while(node.parent) {
-        node = node.parent
-    }
-
-    let n: any = node
-
-    while(n.previous) {
-        n = n.previous
-    }
-
-    return n
-}
-
 export const readQuoteIndex = (str: string, start: number = 0): number => {
     const q = str.charAt(start)
     for(let i = start + 1; i < str.length; i++) {

@@ -1,4 +1,4 @@
-import { XDocument, XAttributeBlank } from '../xdom'
+import { XDocument } from '../xdom'
 import { TElement } from '../xdom/type'
 import { read } from './readers'
 import { TXmlTokenType } from './type'
