@@ -1,4 +1,4 @@
-export type TTokenLite<T> = {
+export type TToken<T> = {
     type: T
     originType: T
     start: number
@@ -6,19 +6,20 @@ export type TTokenLite<T> = {
     value: string
     depth: number
     nest: 0 | 1 | 2
-    parent: TTokenLite<T> | null
+    parent: TToken<T> | null
 }
 
-export type TTokenLiteReader<T> = {
-    (content: string, start: number, parent: TTokenLite<T> | null, previous: TTokenLite<T> | null, initRelation?: boolean): TTokenLite<T> | null
+export type TAgent<T> = {
+    (content: string, start: number, parent: TToken<T>, previous: TToken<T>): TToken<T>
 }
 
-export type TCallbackReader<T> = {
-    (content: string, callback: { (node: TTokenLite<T>): void }, start?: number): void
+/**
+ * Provide a reader for parser to analyze the string content
+ */
+export type TReader<T> = {
+    (content: string, callback: { (node: TToken<T>): void }, start?: number): void
 }
 
-export type TRecurrentCallbackReader<T> = {
-    (content: string, callback: { (node: TTokenLite<T>): void }, start?: number, previous?: TTokenLite<T>, parent?: TTokenLite<T>): void
-}
+export type TAgentAssets<T>= string | [string, string, T?] | null
 
-export type TTokenLiteCallback<T> = { (s: string, i: number, p: TTokenLite<T>, t: TTokenLite<T>): string | [string, string, T?] | null }
+export type TAgentFunction<T> = { (s: string, i: number, parent: TToken<T>, previous: TToken<T>): TAgentAssets<T> }

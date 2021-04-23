@@ -50,6 +50,10 @@ import { REG_DATE } from './src/readers'
 
 // console.log(jsonx.parse(`2021-04-22T02:37:47Z`))
 
-xcript.read(`var x = 1`, node => {
-    console.log(1, node)
+// xcript.read(`var x = 1`, node => {
+//     console.log(1, node)
+// })
+
+jsonx.read(`   callback(((1,2,3,5,6,7)));  `, node => {
+    console.log(2, node.type, node.value)
 })

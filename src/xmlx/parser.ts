@@ -2,14 +2,14 @@ import { XDocument } from '../xdom/index'
 import { TElement } from '../xdom/type'
 import { read } from './readers'
 import { TXmlTokenType } from './type'
-import { TTokenLite } from '../type'
+import { TToken } from '../type'
 
 export const parse = (content: string) => {
 
     const doc = new XDocument()
 
     let cursor: TElement = doc
-    let attr: TTokenLite<TXmlTokenType> = null
+    let attr: TToken<TXmlTokenType> = null
 
     read(content, node => {
         switch (node.type) {

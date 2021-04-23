@@ -1,4 +1,4 @@
-import { TTokenLite } from '../type'
+import { TToken } from '../type'
 import { TJsonTokenType } from './type'
 import { read } from './readers'
 
@@ -6,7 +6,7 @@ const PARENTHESES_SYMBOL = { type: 'parentheses' }
 const BRACES_SYMBOL = { type: 'braces' }
 const BRACKET_SYMBOL = { type: 'bracket' }
 
-const getNodeValue = (node: TTokenLite<TJsonTokenType>) => {
+const getNodeValue = (node: TToken<TJsonTokenType>) => {
     switch(node.originType) {
         case 'number':
             return Number(node.value)
@@ -63,7 +63,7 @@ const emptyStack = (stack: any[], type: any, clear: boolean = false) => {
     }
 }
 
-const update = (stack: any[], node: TTokenLite<TJsonTokenType>) => {
+const update = (stack: any[], node: TToken<TJsonTokenType>) => {
     switch(node.type) {
         case 'parentheses':
             stack.push(getNodeValue(node))

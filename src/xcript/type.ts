@@ -4,7 +4,7 @@ export type TJsonTokenType =
     | 'undefined'
     | 'number'
     | 'string'
-    | 'date'
+    | 'template'
 
     | 'declare'
     | 'return'
@@ -26,14 +26,11 @@ export type TJsonTokenType =
     | 'semicolon'   // 分号
     | 'quote'    // 引号
 
-    | 'parentheses' // 小括号
-    | 'parentheses-comma'
-    | 'parentheses-end' // 小括号
+    | 'bracket-round' // 小括号
+    | 'bracket-round-end' // 小括号
 
-    | 'bracket'  // 中括号
-    | 'bracket-comma'
-    | 'bracket-end'  // 中括号
+    | 'bracket-square'  // 中括号
+    | 'bracket-square-end'  // 中括号
 
-    | 'braces'  // 大括号
-    | 'braces-comma'
-    | 'braces-end'  // 大括号
+    | 'bracket-wind'  // 大括号
+    | 'bracket-wind-end'  // 大括号

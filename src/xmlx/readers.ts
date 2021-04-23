@@ -1,10 +1,9 @@
-import { readQuote, readMiniBinder } from '../utils'
+import { readQuote } from '../utils'
 import { tokenReader, charReader } from '../reader'
-import { TXmlTokenType as T } from './type'
-import { TTokenLite } from '../type'
 import { readMinipBinder } from '../readers'
+import { TXmlTokenType as T } from './type'
 
-const isElementType = (token: TTokenLite<T>) => {
+const isElementType = (token: any) => {
     return token && token.nest === 1 && ['element'].indexOf(token.type) > -1 
 }
 

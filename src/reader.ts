@@ -1,61 +1,46 @@
-import { TCallbackReader, TTokenLite, TTokenLiteReader, TTokenLiteCallback, TRecurrentCallbackReader } from './type'
+import { TReader, TToken, TAgent, TAgentFunction, TAgentAssets } from './type'
+import { REG_BREAK } from './readers'
 
-export const stringReader = <T>(
+type TPlugin<T> = { (seg: TAgentAssets<T>, parent: TToken<T>, previous: TToken<T>): TAgentAssets<T> }
+
+
+const buildToken = <T>(token: TToken<T>, seg: TAgentAssets<T>): TToken<T> => {
+    if(!seg) {
+        return null
+    }
+    if (Array.isArray(seg)) {
+        const [raw, val = raw, type] = seg
+        token.end = token.start + raw.length
+        token.value = val
+        token.type = type || token.type
+    } else {
+        token.end = token.start + seg.length
+        token.value = seg
+    }
+    return token
+}
+
+const reducePlugins = <T>(plugins: TPlugin<T> | TPlugin<T>[], seg: TAgentAssets<T>, parent: TToken<T>, previous: TToken<T>) => {
+    if(Array.isArray(plugins)) {
+        return plugins.reduce((assets, fn) => reducePlugins(fn, assets, parent, previous), seg)
+    } else {
+        if(typeof plugins !== 'function') {
+            return seg
+        }
+        return plugins(seg, parent, previous)
+    }
+}
+
+const agentString = <T>(
     type: T,
     exp: string,
-    nest: 0 | 1 | 2
-): TTokenLiteReader<T> => {
-    return (s: string, i: number, previous: TTokenLite<T>, parent: TTokenLite<T>, initRelation: boolean = true): TTokenLite<T> => {
-        const seg = s.substring(i, i + exp.length)
-        if (seg === exp) {
-            const token: TTokenLite<T> = {
-                start: i,
-                end: i + seg.length,
-                value: seg,
-                parent,
-                type,
-                originType: type,
-                depth: parent ? parent.depth + 1 : 0,
-                nest,
-            }
-            return token
-        }
-    }
-}
-
-export const regReader = <T>(
-    type: T,
-    exp: RegExp,
-    nest: 0 | 1 | 2
-): TTokenLiteReader<T> => {
-    return (s: string, i: number, previous: TTokenLite<T>, parent: TTokenLite<T>, initRelation: boolean = true): TTokenLite<T> => {
-        const m = s.substring(i).match(exp)
-        if (m) {
-            const seg = m[0]
-            const token: TTokenLite<T> = {
-                start: i,
-                end: i + seg.length,
-                value: seg,
-                parent,
-                type,
-                originType: type,
-                depth: parent ? parent.depth + 1 : 0,
-                nest,
-            }
-            return token
-        }
-    }
-}
-
-export const callReader = <T>(
-    type: T,
-    exp: TTokenLiteCallback<T>,
-    nest: 0 | 1 | 2
-): TTokenLiteReader<T> => {
-    return (s: string, i: number, previous: TTokenLite<T>, parent: TTokenLite<T>, initRelation: boolean = true): TTokenLite<T> => {
-        const seg = exp(s, i, parent, previous)
-        if (seg) {
-            const token: TTokenLite<T> = {
+    nest: 0 | 1 | 2,
+    plugin: TPlugin<T> | TPlugin<T>[]
+): TAgent<T> => {
+    return (s: string, i: number, parent: TToken<T>, previous: TToken<T>): TToken<T> => {
+        const matchValue = s.substring(i, i + exp.length)
+        if (matchValue === exp) {
+            return buildToken({
                 start: i,
                 parent,
                 type,
@@ -64,17 +49,61 @@ export const callReader = <T>(
                 nest,
                 end: s.length,
                 value: ''
+            }, reducePlugins(plugin, matchValue, parent, previous))
+        }
+    }
+}
+
+const agentRegExp = <T>(
+    type: T,
+    exp: RegExp,
+    nest: 0 | 1 | 2,
+    plugin: TPlugin<T> | TPlugin<T>[]
+): TAgent<T> => {
+    return (s: string, i: number, parent: TToken<T>, previous: TToken<T>): TToken<T> => {
+        const m = s.substring(i).match(exp)
+        if (m && m.index === 0) {
+
+            const matchValue = m[0]
+            const next = s.substring(i + matchValue.length)
+            if(!REG_BREAK.test(next)) {
+                return null
             }
-            if (Array.isArray(seg)) {
-                const [raw, val = raw, t = type] = seg
-                token.end = i + raw.length
-                token.value = val
-                token.type = t
-            } else {
-                token.end = i + seg.length
-                token.value = seg
-            }
-            return token
+  
+            return buildToken({
+                start: i,
+                parent,
+                type,
+                originType: type,
+                depth: parent ? parent.depth + 1 : 0,
+                nest,
+                end: s.length,
+                value: ''
+            }, reducePlugins(plugin, matchValue, parent, previous))
+        }
+        return null
+    }
+}
+
+const agentFunction = <T>(
+    type: T,
+    exp: TAgentFunction<T>,
+    nest: 0 | 1 | 2,
+    plugin: TPlugin<T> | TPlugin<T>[]
+): TAgent<T> => {
+    return (s, i, parent, previous): TToken<T> => {
+        let seg = exp(s, i, parent, previous)
+        if (seg) {
+            return buildToken({
+                start: i,
+                parent,
+                type,
+                originType: type,
+                depth: parent ? parent.depth + 1 : 0,
+                nest,
+                end: s.length,
+                value: ''
+            }, reducePlugins(plugin, seg, parent, previous))
         }
         return null
     }
@@ -82,28 +111,35 @@ export const callReader = <T>(
 
 export const tokenReader = <T>(
     type: T,
-    expression: string | RegExp | TTokenLiteCallback<T>,
-    nest: 0 | 1 | 2
-): TTokenLiteReader<T> => {
+    expression: string | RegExp | TAgentFunction<T>,
+    nest: 0 | 1 | 2,
+    plugin?: TPlugin<T> | TPlugin<T>[]
+): TAgent<T> => {
     if (typeof expression === 'string') {
-        return stringReader(type, expression, nest)
+        return agentString(type, expression, nest, plugin)
     } else if (typeof expression === 'function') {
-        return callReader(type, expression, nest)
+        return agentFunction(type, expression, nest, plugin)
     } else if (expression instanceof RegExp) {
-        return regReader(type, expression, nest)
+        return agentRegExp(type, expression, nest, plugin)
     }
     return null
 }
 
-export const recurrentReader = <T>(readers: TTokenLiteReader<T>[], leftType: T): TRecurrentCallbackReader<T> => {
-    const reader: TRecurrentCallbackReader<T> = (content, callback, start = 0, previous = null, parent = null) => {
-        let token: TTokenLite<T> = null
+export const recurrentReader = <T>(agents: TAgent<T>[]): TReader<T> => {
+    const reader = (
+        content: string,
+        callback: { (node: TToken<T>): void },
+        start: number = 0,
+        parent: TToken<T> = null,
+        previous: TToken<T> = null
+    ) => {
+        let token: TToken<T> = null
         const m = content.substring(start).match(/^\s+/)
         if(m) {
             start += m[0].length
         }
-        if (readers.some(r => {
-            token = r(content, start, previous, parent)
+        if (agents.some(r => {
+            token = r(content, start, parent, previous)
             return !!token
         })) {
             callback(token)
@@ -117,28 +153,28 @@ export const recurrentReader = <T>(readers: TTokenLiteReader<T>[], leftType: T):
                 previous = parent
                 parent = previous ? previous.parent : null
             }
-            reader(content, callback, end, previous, parent)
+            reader(content, callback, end, parent, previous)
         }
     }
     return reader
 }
 
-export const charReader = <T>(readers: TTokenLiteReader<T>[], leftType: T): TCallbackReader<T> => {
+export const charReader = <T>(agents: TAgent<T>[], leftType: T): TReader<T> => {
 
-    let previous: TTokenLite<T> = null
-    let parent: TTokenLite<T> = null
+    let previous: TToken<T> = null
+    let parent: TToken<T> = null
 
-    const read: TCallbackReader<T> = (content, callback, start = 0) => {
+    const read: TReader<T> = (content, callback, start = 0) => {
         const len = content.length
         let leftStart = start
         for (let i = start; i < len; i++) {
-            let token: TTokenLite<T> = null
-            if (readers.some(r => {
-                token = r(content, i, previous, parent, false)
+            let token: TToken<T> = null
+            if (agents.some(r => {
+                token = r(content, i, parent, previous)
                 return !!token
             })) {
                 if (token.start - leftStart > 0) {
-                    const leftToken: TTokenLite<T> = {
+                    const leftToken: TToken<T> = {
                         type: leftType,
                         originType: leftType,
                         start: leftStart,
@@ -166,7 +202,7 @@ export const charReader = <T>(readers: TTokenLiteReader<T>[], leftType: T): TCal
             }
         }
         if (leftStart < content.length) {
-            const leftToken: TTokenLite<T> = {
+            const leftToken: TToken<T> = {
                 type: leftType,
                 originType: leftType,
                 start: leftStart,

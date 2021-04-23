@@ -36,4 +36,4 @@ const readers = [
     tokenReader<T>('parentheses-end', ')', 2),
 ]
 
-export const read = recurrentReader<T>(readers, 'blank')
+export const read = recurrentReader<T>(readers)

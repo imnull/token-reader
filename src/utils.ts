@@ -48,15 +48,14 @@ export const readNestIndex = (str: string, start: number) => {
     return -1
 }
 
-export const readMiniBinderIndex = (str: string, start: number = 0): number => {
-    const head = str.substring(start, start + 2)
-    if(head !== '{{') {
+export const readMiniBinderIndex = (str: string, start: number = 0, left: string = '{{', right: string = '}}'): number => {
+    const head = str.substring(start, start + left.length)
+    if(head !== left) {
         return -1
     }
-    const right = '}}'
-    for(let i = start + 2, len = str.length; i < len; i++) {
+    for(let i = start + left.length, len = str.length; i < len; i++) {
         const ch = str.charAt(i)
-        if(str.substring(i, i + 2) === right) {
+        if(str.substring(i, i + right.length) === right) {
             return i + 2
         } else if(QUOTE.indexOf(ch) > -1) {
             const end = readQuoteIndex(str, i)

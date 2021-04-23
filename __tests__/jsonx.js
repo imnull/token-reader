@@ -4,7 +4,7 @@ test('[jsonx] 基础类型解析', () => {
     expect(jsonx.parse(`"abc"`)).toEqual('abc')
     expect(jsonx.parse(`'abc'`)).toEqual('abc')
     expect(jsonx.parse(`abc`)).toEqual('abc')
-    expect(jsonx.parse(`123`)).toEqual(123)
+    expect(jsonx.parse(`123`)).toEqual(123)    
     expect(jsonx.parse(`undefined`)).toEqual(undefined)
     expect(jsonx.parse(`null`)).toEqual(null)
     expect(jsonx.parse(`2021-04-22T02:37:47.123Z`).getTime()).toEqual(1619059067123)
@@ -17,6 +17,17 @@ test('[jsonx] 基础类型解析', () => {
     expect(jsonx.parse(`2021-04T02:37`).getTime()).toEqual(1617215820000)
     expect(jsonx.parse(`2021T02:37Z`).getTime()).toEqual(1609468620000)
     expect(jsonx.parse(`2021T02:37`).getTime()).toEqual(1609439820000)
+
+    expect(jsonx.parse(`123abc`)).toEqual(undefined)
+    expect(jsonx.parse(`123 abc`)).toEqual('abc')
+    expect(jsonx.parse(`abc123`)).toEqual('abc123')
+    expect(jsonx.parse(`abc 123`)).toEqual(123)
+
+    expect(jsonx.parse(`2021T02:37abc`)).toEqual(undefined)
+    expect(jsonx.parse(`2021T02:37 abc`)).toEqual('abc')
+    expect(jsonx.parse(`2021T02:37123`)).toEqual(undefined)
+    expect(jsonx.parse(`2021T02:37 123`)).toEqual(123)
+
 })
 
 
