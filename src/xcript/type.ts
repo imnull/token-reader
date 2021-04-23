@@ -1,4 +1,4 @@
-export type TJsonTokenType =
+export type TXcriptTokenType =
     'id'
     | 'null'
     | 'undefined'
@@ -34,3 +34,6 @@ export type TJsonTokenType =
 
     | 'bracket-wind'  // 大括号
     | 'bracket-wind-end'  // 大括号
+
+    | 'program'
+    | 'eof'

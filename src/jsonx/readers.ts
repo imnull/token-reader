@@ -1,17 +1,17 @@
 import { readQuote } from '../utils'
-import { tokenReader, recurrentReader } from '../reader'
+import { agent, recurrentReader } from '../reader'
 import { TJsonTokenType as T } from './type'
 import { REG_NUMBER, REG_ID, REG_DATE, readString } from '../readers'
 
 
 const readers = [
-    tokenReader<T>('null', 'null', 0),
-    tokenReader<T>('undefined', 'undefined', 0),
-    tokenReader<T>('date', REG_DATE, 0),
-    tokenReader<T>('id', REG_ID, 0),
-    tokenReader<T>('number', REG_NUMBER, 0),
-    tokenReader<T>('string', readString, 0),
-    tokenReader<T>('comma', (s, i, parent) => {
+    agent<T>('null', 'null', 0),
+    agent<T>('undefined', 'undefined', 0),
+    agent<T>('date', REG_DATE, 0),
+    agent<T>('id', REG_ID, 0),
+    agent<T>('number', REG_NUMBER, 0),
+    agent<T>('string', readString, 0),
+    agent<T>('comma', (s, i, parent) => {
         const char = s.charAt(i)
         if(char !== ',') {
             return null
@@ -27,13 +27,13 @@ const readers = [
         }
         return char
     }, 0),
-    tokenReader<T>('colon', ':', 0),
-    tokenReader<T>('braces', '{', 1),
-    tokenReader<T>('braces-end', '}', 2),
-    tokenReader<T>('bracket', '[', 1),
-    tokenReader<T>('bracket-end', ']', 2),
-    tokenReader<T>('parentheses', '(', 1),
-    tokenReader<T>('parentheses-end', ')', 2),
+    agent<T>('colon', ':', 0),
+    agent<T>('braces', '{', 1),
+    agent<T>('braces-end', '}', 2),
+    agent<T>('bracket', '[', 1),
+    agent<T>('bracket-end', ']', 2),
+    agent<T>('parentheses', '(', 1),
+    agent<T>('parentheses-end', ')', 2),
 ]
 
 export const read = recurrentReader<T>(readers)

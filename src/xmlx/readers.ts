@@ -1,5 +1,5 @@
 import { readQuote } from '../utils'
-import { tokenReader, charReader } from '../reader'
+import { agent, charReader } from '../reader'
 import { readMinipBinder } from '../readers'
 import { TXmlTokenType as T } from './type'
 
@@ -8,7 +8,7 @@ const isElementType = (token: any) => {
 }
 
 const readers = [
-    tokenReader<T>('element', (s, i, parent) => {
+    agent<T>('element', (s, i, parent) => {
         if(isElementType(parent)) {
             return null
         }
@@ -18,7 +18,7 @@ const readers = [
         }
         return [m[0], m[1]]
     }, 1),
-    tokenReader<T>('comment', (s, i, parent) => {
+    agent<T>('comment', (s, i, parent) => {
         if(isElementType(parent)) {
             return null
         }
@@ -28,19 +28,19 @@ const readers = [
         }
         return [m[0], m[1] || '']
     }, 0),
-    tokenReader<T>('instruction', (s, i, parent) => {
+    agent<T>('instruction', (s, i, parent) => {
         if(isElementType(parent)) {
             return null
         }
         return readMinipBinder(s, i)
     }, 0),
-    tokenReader<T>('element-end', (s, i, parent) => {
+    agent<T>('element-end', (s, i, parent) => {
         if(isElementType(parent) && s.charAt(i) === '>') {
             return '>'
         }
         return null
     }, 2),
-    tokenReader<T>('element-single', (s, i, parent) => {
+    agent<T>('element-single', (s, i, parent) => {
         if(!isElementType(parent)) {
             return null
         }
@@ -50,7 +50,7 @@ const readers = [
         }
         return m[0]
     }, 2),
-    tokenReader<T>('element-close', (s, i, parent) => {
+    agent<T>('element-close', (s, i, parent) => {
         if(isElementType(parent)) {
             return null
         }
@@ -60,7 +60,7 @@ const readers = [
         }
         return [m[0], m[1]]
     }, 0),
-    tokenReader<T>('element-blank', (s, i, parent) => {
+    agent<T>('element-blank', (s, i, parent) => {
         if(isElementType(parent)) {
             const m = s.substring(i).match(/^\s+/)
             if(!m) {
@@ -70,13 +70,13 @@ const readers = [
         }
         return null
     }, 0),
-    tokenReader<T>('attribute-equal', (s, i, parent, previous) => {
+    agent<T>('attribute-equal', (s, i, parent, previous) => {
         if(isElementType(parent) && previous && previous.type === 'attribute-name' && s.charAt(i) === '=') {
             return '='
         }
         return null
     }, 0),
-    tokenReader<T>('attribute-name', (s, i, parent, previous) => {
+    agent<T>('attribute-name', (s, i, parent, previous) => {
         if(isElementType(parent) && previous && previous.type !== 'attribute-equal') {
             const m = s.substring(i).match(/^[^\s][^\s\=\>\/]*/)
             if(!m) {
@@ -86,7 +86,7 @@ const readers = [
         }
         return null
     }, 0),
-    tokenReader<T>('attribute-value', (s, i, parent, previous) => {
+    agent<T>('attribute-value', (s, i, parent, previous) => {
         if(isElementType(parent) && previous && previous.type === 'attribute-equal') {
             if(['"', "'"].indexOf(s.charAt(i)) > -1) {
                 const quote = readQuote(s, i)

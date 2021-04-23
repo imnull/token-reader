@@ -6,8 +6,11 @@ export type TToken<T> = {
     value: string
     depth: number
     nest: 0 | 1 | 2
+    weight: number
     parent: TToken<T> | null
 }
+
+export type TPlugin<T> = { (seg: TAgentAssets<T>, parent: TToken<T>, previous: TToken<T>): TAgentAssets<T> }
 
 export type TAgent<T> = {
     (content: string, start: number, parent: TToken<T>, previous: TToken<T>): TToken<T>

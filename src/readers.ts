@@ -1,6 +1,6 @@
 import { readMiniBinder, readQuote } from './utils'
 
-export const REG_BREAK = /^$|^[\s\,\;\:\"\'\`\(\)\[\]\{\}]/
+export const REG_BREAK = /^$|^[\s\,\;\:\"\'\`\(\)\[\]\{\}\+\-\*\/\^\<\>\=]/
 export const REG_NUMBER = /([\+\-]\s*)?([\d\.]+[eE][\+\-]?\d+|0?\.\d+|[1-9]\d*(\.(\d+)?)?|0)/
 export const REG_ID = /[\$_a-zA-Z]+[a-zA-Z$\d_]*/
 // 2021-04-22T02:37:47.000Z
