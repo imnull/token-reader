@@ -10,12 +10,21 @@ const BINARY_SYMBOL = { type: 'binary' }
 
 export const createCallback: TReaderCallbackFactory<any[], X> = stack => token => {
     if(token.type === 'binary') {
-        stack.push(BINARY_SYMBOL)
+        const left = stack.pop()
+        const op = binary[token.value]
+        const fn = (right: any) => op(left, right)
+        stack.push(fn)
     }
 }
 
-export const createReaderCallback = combinParserCallbackFactory(token => {
+export const createReaderCallback = combinParserCallbackFactory((token, stack) => {
     console.log(token.readerGroup, token.type, token.value)
+    const reducer = stack[stack.length - 2]
+    if(typeof reducer === 'function') {
+        const val = stack.pop()
+        const reduce = stack.pop()
+        stack.push(reduce(val))
+    }
 }, createCallback, jsonxCreateReaderCallback)
 
 export const parse: TParser = (content: string, start: number = 0) => {
