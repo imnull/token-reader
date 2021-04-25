@@ -7,7 +7,7 @@ const isElementType = (token: any) => {
     return token && token.nest === 1 && ['element'].indexOf(token.type) > -1 
 }
 
-const readers = [
+export const readers = [
     agent<T>('element', (s, i, parent) => {
         if(isElementType(parent)) {
             return null

@@ -2,19 +2,17 @@ import { XDocument } from '../xdom/index'
 import { TElement } from '../xdom/type'
 import { read } from './readers'
 import { TXmlTokenType } from './type'
-import { TToken } from '../type'
+import { TToken, TParser, TReaderCallbackFactory } from '../type'
 
-export const parse = (content: string) => {
+export const createReaderCallback: TReaderCallbackFactory<XDocument, TXmlTokenType> = stack => {
 
-    const doc = new XDocument()
-
-    let cursor: TElement = doc
+    let cursor: TElement = stack
     let attr: TToken<TXmlTokenType> = null
 
-    read(content, node => {
+    return node => {
         switch (node.type) {
             case 'element':
-                const el = doc.createElement(node.value)
+                const el = stack.createElement(node.value)
                 cursor.appendChild(el)
                 cursor = el
                 break
@@ -28,7 +26,7 @@ export const parse = (content: string) => {
                 }
                 if (n) {
                     n.isClosed = true
-                    cursor = n.parentNode || doc
+                    cursor = n.parentNode || stack
                 }
                 break
             case 'attribute-name':
@@ -44,23 +42,28 @@ export const parse = (content: string) => {
             case 'element-single':
                 cursor.isSingle = true
                 cursor.attributes.trimEnd()
-                cursor = cursor.parentNode || doc
+                cursor = cursor.parentNode || stack
                 break
             case 'element-end':
                 cursor.isSingle = false
                 cursor.attributes.trimEnd()
                 break
             case 'text':
-                cursor.appendChild(doc.createTextNode(node.value))
+                cursor.appendChild(stack.createTextNode(node.value))
                 break
             case 'comment':
-                cursor.appendChild(doc.createCommen(node.value))
+                cursor.appendChild(stack.createCommen(node.value))
                 break
             case 'instruction':
-                cursor.appendChild(doc.createInstruction(node.value))
+                cursor.appendChild(stack.createInstruction(node.value))
                 break
         }
-    })
+    }
+}
 
+export const parse: TParser = (content, start = 0) => {
+    const doc = new XDocument()
+    const callback = createReaderCallback(doc)
+    read(content, callback, start)
     return doc
 }

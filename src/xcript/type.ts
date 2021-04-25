@@ -7,6 +7,7 @@ export type TXcriptTokenType =
     | 'template'
 
     | 'declare'
+    | 'declare-end'
     | 'return'
     | 'if'
     | 'else'
@@ -25,6 +26,7 @@ export type TXcriptTokenType =
     | 'colon'   // 冒号
     | 'semicolon'   // 分号
     | 'quote'    // 引号
+    | 'line'    // 换行
 
     | 'bracket-round' // 小括号
     | 'bracket-round-end' // 小括号

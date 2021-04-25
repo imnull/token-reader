@@ -8,21 +8,27 @@ export type TToken<T> = {
     nest: 0 | 1 | 2
     weight: number
     parent: TToken<T> | null
+    readerGroup: number
+    readerId: number
 }
 
-export type TPlugin<T> = { (seg: TAgentAssets<T>, parent: TToken<T>, previous: TToken<T>): TAgentAssets<T> }
+export type TPlugin<T> = { (options: { assets: TAgentAssets<T>, parent: TToken<T>, previous: TToken<T> }): TAgentAssets<T> }
 
 export type TAgent<T> = {
-    (content: string, start: number, parent: TToken<T>, previous: TToken<T>): TToken<T>
+    (content: string, start: number, parent: TToken<T>, previous: TToken<T>, readerId: number, readerGroup: number): TToken<T>
 }
 
-/**
- * Provide a reader for parser to analyze the string content
- */
+
+export type TReaderCallback<T> = { (node: TToken<T>): void }
+
+export type TReaderCallbackFactory<S, T> = { (stack: S): TReaderCallback<T> }
+
 export type TReader<T> = {
-    (content: string, callback: { (node: TToken<T>): void }, start?: number): void
+    (content: string, callback: TReaderCallback<T>, start: number): number
 }
 
-export type TAgentAssets<T>= string | [string, string, T?] | null
+export type TAgentAssets<T>= string | [string, string, T?, (0 | 1 | 2)?] | null
 
 export type TAgentFunction<T> = { (s: string, i: number, parent: TToken<T>, previous: TToken<T>): TAgentAssets<T> }
+
+export type TParser = { (content: string, start?: number) }

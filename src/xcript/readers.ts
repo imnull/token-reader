@@ -1,47 +1,66 @@
 import { readQuote } from '../utils'
-import { agent, recurrentReader } from '../reader'
-import { TXcriptTokenType as T } from './type'
+import { agent, recurrentReader, multiReader } from '../reader'
+import { TXcriptTokenType as X } from './type'
 import { REG_NUMBER, REG_ID, readString } from '../readers'
 
+import { readers as jsonxReaders, TJsonTokenType as J } from '../jsonx/index'
 
-const readers = [
 
-    agent<T>('comma', ',', 0, 30),
-    agent<T>('colon', ':', 0, 30),
-    agent<T>('semicolon', ';', 0, 30),
-    agent<T>('bracket-round', '(', 1, 30),
-    agent<T>('bracket-round-end', ')', 2, 30),
-    agent<T>('bracket-square', '[', 1, 30),
-    agent<T>('bracket-square-end', ']', 2, 30),
-    agent<T>('bracket-wind', '{', 1, 30),
-    agent<T>('bracket-wind-end', '}', 2, 30),
+export const readers = [
+    // agent<X>('comma', ',', 0, 30),
+    // agent<X>('colon', ':', 0, 30),
+    // agent<X>('semicolon', ';', 0, 30, [({ assets, parent }) => {
+    //     if(parent && parent.type === 'declare') {
+    //         return [';', ';', 'declare-end', 2]
+    //     }
+    //     return assets
+    // }]),
+    // agent<X>('bracket-round', '(', 1, 30),
+    // agent<X>('bracket-round-end', ')', 2, 30),
+    // agent<X>('bracket-square', '[', 1, 30),
+    // agent<X>('bracket-square-end', ']', 2, 30),
+    // agent<X>('bracket-wind', '{', 1, 30),
+    // agent<X>('bracket-wind-end', '}', 2, 30),
     
-    agent<T>('null', 'null', 0, 20),
-    agent<T>('undefined', 'undefined', 0, 20),
+    // agent<X>('null', 'null', 0, 20),
+    // agent<X>('undefined', 'undefined', 0, 20),
 
-    agent<T>('assign', '=', 0, 30),
+    // agent<X>('assign', '=', 0, 30),
 
-    agent<T>('binary', [
+    agent<X>('binary', [
         '+', '-', '*', '/', '%', '^', '|', '&', '>>>', '>>', '<<', '>=', '>', '<=', '<', '===', '==', '!==', '!='
     ], 0, 50),
-    
-
-    agent<T>('declare', 'var', 0, 10),
-    agent<T>('return', 'return', 0, 10),
-    agent<T>('if', 'if', 0, 10),
-    agent<T>('else', 'else', 0, 10),
-    agent<T>('while', 'while', 0, 10),
-    agent<T>('switch', 'switch', 0, 10),
-    agent<T>('case', 'case', 0, 10),
-    agent<T>('break', 'break', 0, 10),
-
-    agent<T>('id', REG_ID, 0),
-    agent<T>('number', REG_NUMBER, 0),
-    agent<T>('string', readString, 0),
 
     
-    
-    
+
+    // agent<X>('declare', 'var', 1, 10),
+    // agent<X>('declare-end', (s, i, parent) => {
+    //     if(parent && parent.type === 'declare') {
+    //         if(s.length === i) {
+    //             return ['', '', 'declare-end']
+    //         }
+    //     }
+    //     return null
+    // }, 2, 10),
+    // agent<X>('line', (s, i, parent) => {
+    //     const m = s.substring(i).match(/^[\r\n]+/)
+    //     if(!m) {
+    //         return null
+    //     }
+    //     return m[0]
+    // }, 2, 10),
+    // agent<X>('return', 'return', 0, 10),
+    // agent<X>('if', 'if', 0, 10),
+    // agent<X>('else', 'else', 0, 10),
+    // agent<X>('while', 'while', 0, 10),
+    // agent<X>('switch', 'switch', 0, 10),
+    // agent<X>('case', 'case', 0, 10),
+    // agent<X>('break', 'break', 0, 10),
+
+    // agent<X>('id', REG_ID, 0),
+    // agent<X>('number', REG_NUMBER, 0),
+    // agent<X>('string', readString, 0),
 ]
 
-export const read = recurrentReader<T>(readers, 'eof')
+// export const read = recurrentReader<T>(readers)
+export const read = multiReader<X | J>(readers, jsonxReaders)

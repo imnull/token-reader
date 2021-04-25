@@ -5,7 +5,7 @@
   "main": "./dist/index.js",
   "module": "./es-lib/index.js",
   "scripts": {
-    "test": "jest --verbose",
+    "test": "npm run build && jest --verbose",
     "build:es5": "rm -rf ./dist && tsc --project tsconfig.es5.json",
     "build:es6": "rm -rf ./es-lib && tsc --project tsconfig.es6.json",
     "build": "npm run build:es5 && npm run build:es6"

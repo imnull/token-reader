@@ -1,12 +1,12 @@
-import { TToken } from '../type'
-import { TJsonTokenType } from './type'
+import { TToken, TParser, TReaderCallbackFactory } from '../type'
+import { TJsonTokenType as J } from './type'
 import { read } from './readers'
 
-const PARENTHESES_SYMBOL = { type: 'parentheses' }
-const BRACES_SYMBOL = { type: 'braces' }
-const BRACKET_SYMBOL = { type: 'bracket' }
+const BRACKET_ROUND_SYMBOL = { type: 'bracket-round' }
+const BRACKET_WIND_SYMBOL = { type: 'bracket-wind' }
+const BRACKET_SQUARE_SYMBOL = { type: 'bracket-square' }
 
-const getNodeValue = (node: TToken<TJsonTokenType>) => {
+const getNodeValue = (node: TToken<J>) => {
     switch(node.originType) {
         case 'number':
             return Number(node.value)
@@ -16,12 +16,12 @@ const getNodeValue = (node: TToken<TJsonTokenType>) => {
             return null
         case 'undefined':
             return void(0)
-        case 'parentheses':
-            return PARENTHESES_SYMBOL
-        case 'braces':
-            return BRACES_SYMBOL
-        case 'bracket':
-            return BRACKET_SYMBOL
+        case 'bracket-round':
+            return BRACKET_ROUND_SYMBOL
+        case 'bracket-wind':
+            return BRACKET_WIND_SYMBOL
+        case 'bracket-square':
+            return BRACKET_SQUARE_SYMBOL
     }
     return node.value
 }
@@ -63,47 +63,47 @@ const emptyStack = (stack: any[], type: any, clear: boolean = false) => {
     }
 }
 
-const update = (stack: any[], node: TToken<TJsonTokenType>) => {
+const update = (stack: any[], node: TToken<J>) => {
     switch(node.type) {
-        case 'parentheses':
+        case 'bracket-round':
             stack.push(getNodeValue(node))
             stack.push(void(0))
             break
-        case 'parentheses-comma':
-            if(stepUp(stack, PARENTHESES_SYMBOL) === 2) {
+        case 'bracket-round-comma':
+            if(stepUp(stack, BRACKET_ROUND_SYMBOL) === 2) {
                 const tmp = stack.pop()
                 stack[stack.length - 1] = tmp
             }
             break
-        case 'parentheses-end':
+        case 'bracket-round-end':
             const parenthesesVal = stack.pop()
-            emptyStack(stack, PARENTHESES_SYMBOL, true)
+            emptyStack(stack, BRACKET_ROUND_SYMBOL, true)
             stack.push(parenthesesVal)
             break
-        case 'braces':
+        case 'bracket-wind':
             stack.push(getNodeValue(node))
             stack.push({})
             break
-        case 'braces-comma':
-            if(stepUp(stack, BRACES_SYMBOL) === 3) {
+        case 'bracket-wind-comma':
+            if(stepUp(stack, BRACKET_WIND_SYMBOL) === 3) {
                 const propVal = stack.pop()
                 const propName = stack.pop()
                 stack[stack.length - 1][propName] = propVal
             }
             break
-        case 'braces-end':
-            if(stepUp(stack, BRACES_SYMBOL) === 2) {
+        case 'bracket-wind-end':
+            if(stepUp(stack, BRACKET_WIND_SYMBOL) === 2) {
                 stack.push(stack[stack.length - 1])
             }
-            endNest(stack, BRACES_SYMBOL)
+            endNest(stack, BRACKET_WIND_SYMBOL)
             break
-        case 'bracket':
+        case 'bracket-square':
             stack.push(getNodeValue(node))
             stack.push([])
             stack.push(0)
             break
-        case 'bracket-comma':
-            const settingStep = stepUp(stack, BRACKET_SYMBOL)
+        case 'bracket-square-comma':
+            const settingStep = stepUp(stack, BRACKET_SQUARE_SYMBOL)
             if(settingStep === 3) {
                 let arrVal = stack.pop()
                 let arrIdx = stack.pop()
@@ -113,11 +113,11 @@ const update = (stack: any[], node: TToken<TJsonTokenType>) => {
                 stack[stack.length - 1] += 1
             }
             break
-        case 'bracket-end':
-            if(stepUp(stack, BRACKET_SYMBOL) === 2) {
+        case 'bracket-square-end':
+            if(stepUp(stack, BRACKET_SQUARE_SYMBOL) === 2) {
                 stack.pop()
             }
-            endNest(stack, BRACKET_SYMBOL)
+            endNest(stack, BRACKET_SQUARE_SYMBOL)
             break
         case 'id':
         case 'date':
@@ -131,10 +131,13 @@ const update = (stack: any[], node: TToken<TJsonTokenType>) => {
     
 }
 
-export const parse = (content: string) => {
+export const createReaderCallback: TReaderCallbackFactory<any[], J> = stack => node => {
+    update(stack, node)
+}
+
+export const parse: TParser = (content, start = 0) => {
     const stack: any[] = []
-    read(content, node => {
-        update(stack, node)
-    })
+    const callback = createReaderCallback(stack)
+    read(content, callback, start)
     return stack.pop()
 }

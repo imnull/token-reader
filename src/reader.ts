@@ -1,15 +1,16 @@
-import { TReader, TToken, TAgent, TAgentFunction, TAgentAssets, TPlugin } from './type'
+import { TReader, TToken, TAgent, TAgentFunction, TAgentAssets, TPlugin, TReaderCallbackFactory } from './type'
 import { REG_BREAK } from './readers'
 
 const buildToken = <T>(token: TToken<T>, seg: TAgentAssets<T>): TToken<T> => {
-    if(!seg) {
+    if (!seg) {
         return null
     }
     if (Array.isArray(seg)) {
-        const [raw, val = raw, type] = seg
+        const [raw, val = raw, type, nest] = seg
         token.end = token.start + raw.length
         token.value = val
         token.type = type || token.type
+        token.nest = nest || token.nest
     } else {
         token.end = token.start + seg.length
         token.value = seg
@@ -17,14 +18,14 @@ const buildToken = <T>(token: TToken<T>, seg: TAgentAssets<T>): TToken<T> => {
     return token
 }
 
-const reducePlugins = <T>(plugins: TPlugin<T> | TPlugin<T>[], seg: TAgentAssets<T>, parent: TToken<T>, previous: TToken<T>) => {
-    if(Array.isArray(plugins)) {
-        return plugins.reduce((assets, fn) => reducePlugins(fn, assets, parent, previous), seg)
+const reducePlugins = <T>(plugins: TPlugin<T> | TPlugin<T>[], assets: TAgentAssets<T>, parent: TToken<T>, previous: TToken<T>) => {
+    if (Array.isArray(plugins)) {
+        return plugins.reduce((seg, fn) => reducePlugins(fn, seg, parent, previous), assets)
     } else {
-        if(typeof plugins !== 'function') {
-            return seg
+        if (typeof plugins !== 'function') {
+            return assets
         }
-        return plugins(seg, parent, previous)
+        return plugins({ assets, parent, previous })
     }
 }
 
@@ -35,7 +36,7 @@ const agentString = <T>(
     weight: number,
     plugin: TPlugin<T> | TPlugin<T>[]
 ): TAgent<T> => {
-    return (s: string, i: number, parent: TToken<T>, previous: TToken<T>): TToken<T> => {
+    return (s, i, parent, previous, readerId, readerGroup): TToken<T> => {
         const matchValue = s.substring(i, i + exp.length)
         if (matchValue === exp) {
             return buildToken({
@@ -47,7 +48,9 @@ const agentString = <T>(
                 depth: parent ? parent.depth + 1 : 0,
                 nest,
                 end: s.length,
-                value: ''
+                value: '',
+                readerGroup,
+                readerId,
             }, reducePlugins(plugin, matchValue, parent, previous))
         }
     }
@@ -60,16 +63,16 @@ const agentRegExp = <T>(
     weight: number,
     plugin: TPlugin<T> | TPlugin<T>[]
 ): TAgent<T> => {
-    return (s: string, i: number, parent: TToken<T>, previous: TToken<T>): TToken<T> => {
+    return (s, i, parent, previous, readerId, readerGroup) => {
         const m = s.substring(i).match(exp)
         if (m && m.index === 0) {
 
             const matchValue = m[0]
             const next = s.substring(i + matchValue.length)
-            if(!REG_BREAK.test(next)) {
+            if (!REG_BREAK.test(next)) {
                 return null
             }
-  
+
             return buildToken({
                 weight,
                 start: i,
@@ -79,7 +82,9 @@ const agentRegExp = <T>(
                 depth: parent ? parent.depth + 1 : 0,
                 nest,
                 end: s.length,
-                value: ''
+                value: '',
+                readerId,
+                readerGroup,
             }, reducePlugins(plugin, matchValue, parent, previous))
         }
         return null
@@ -93,7 +98,7 @@ const agentFunction = <T>(
     weight: number,
     plugin: TPlugin<T> | TPlugin<T>[]
 ): TAgent<T> => {
-    return (s, i, parent, previous): TToken<T> => {
+    return (s, i, parent, previous, readerId, readerGroup): TToken<T> => {
         let seg = exp(s, i, parent, previous)
         if (seg) {
             return buildToken({
@@ -105,7 +110,9 @@ const agentFunction = <T>(
                 depth: parent ? parent.depth + 1 : 0,
                 nest,
                 end: s.length,
-                value: ''
+                value: '',
+                readerId,
+                readerGroup,
             }, reducePlugins(plugin, seg, parent, previous))
         }
         return null
@@ -117,7 +124,7 @@ export const agent = <T>(
     expression: string | RegExp | TAgentFunction<T> | (string | RegExp | TAgentFunction<T>)[],
     nest: 0 | 1 | 2,
     weight: number = 0,
-    plugin?: TPlugin<T> | TPlugin<T>[]
+    plugin?: TPlugin<T> | TPlugin<T>[],
 ): TAgent<T> => {
     if (typeof expression === 'string') {
         return agentString(type, expression, nest, weight, plugin)
@@ -125,10 +132,10 @@ export const agent = <T>(
         return agentFunction(type, expression, nest, weight, plugin)
     } else if (expression instanceof RegExp) {
         return agentRegExp(type, expression, nest, weight, plugin)
-    } else if(Array.isArray(expression)) {
+    } else if (Array.isArray(expression)) {
         const agents = expression.map(exp => agent<T>(type, exp, nest, weight, plugin))
-        return (s, i, parent, previous) => {
-            const tokens = agents.map(agent => agent(s, i, parent, previous)).filter(t => !!t)
+        return (s, i, parent, previous, readerId, readerGroup) => {
+            const tokens = agents.map(agent => agent(s, i, parent, previous, readerId, readerGroup)).filter(t => !!t)
             return tokens[0] || null
         }
     }
@@ -142,52 +149,42 @@ const createErrorMessage = (content: string, start: number) => {
     return `\n    ${JSON.stringify(content.substring(contentStart, contentEnd)).slice(1, -1).replace(/\\n/g, ' ')}\n    ${' '.repeat(offset)}^`
 }
 
-export const recurrentReader = <T>(agents: TAgent<T>[], eof?: T): TReader<T> => {
+const agentBingo = <T>(agents: TAgent<T>[], content: string, start: number, parent: TToken<T>, previous: TToken<T>, readerGroup: number) => {
+    const bingos = agents.map((agent, index) => agent(content, start, parent, previous, index, readerGroup)).filter(t => !!t)
+    if (bingos.length < 1) {
+        return null
+    }
+    const token = bingos.sort((a, b) => b.weight - a.weight)[0]
+    if (token.nest === 0) {
+        previous = token
+    } else if (token.nest === 1) {
+        parent = token
+        previous = null
+    } else if (token.nest === 2) {
+        previous = parent
+        parent = previous ? previous.parent : null
+    }
+    return { token, parent, previous }
+}
+
+export const recurrentReader = <T>(agents: TAgent<T>[]): TReader<T> => {
     const reader = (
         content: string,
         callback: { (node: TToken<T>): void },
         start: number = 0,
         parent: TToken<T> = null,
         previous: TToken<T> = null
-    ) => {
+    ): number => {
         const m = content.substring(start).match(/^\s+/)
-        if(m) {
+        if (m) {
             start += m[0].length
         }
-
-        const bingos = agents.map(agent => agent(content, start, parent, previous)).filter(t => !!t)
-        if(bingos.length > 0) {
-            const token = bingos.sort((a, b) => b.weight - a.weight)[0]
-            callback(token)
-            const { end } = token
-            if (token.nest === 0) {
-                previous = token
-            } else if (token.nest === 1) {
-                parent = token
-                previous = null
-            } else if (token.nest === 2) {
-                previous = parent
-                parent = previous ? previous.parent : null
-            }
-            reader(content, callback, end, parent, previous)
+        const bingo = agentBingo(agents, content, start, parent, previous, 0)
+        if (!bingo) {
+            return start
         } else {
-            if(start < content.length) {
-                throw `SyntaxError: Invalid or unexpected token ${createErrorMessage(content, start)}`
-            } else {
-                if(false && eof) {
-                    callback({
-                        type: eof,
-                        originType: eof,
-                        start,
-                        end: start,
-                        value: null,
-                        depth: 0,
-                        nest: 0,
-                        weight: 0,
-                        parent: null,
-                    })
-                }
-            }
+            callback(bingo.token)
+            return reader(content, callback, bingo.token.end, bingo.parent, bingo.previous)
         }
     }
     return reader
@@ -198,17 +195,19 @@ export const charReader = <T>(agents: TAgent<T>[], leftType: T): TReader<T> => {
     let previous: TToken<T> = null
     let parent: TToken<T> = null
 
-    const read: TReader<T> = (content, callback, start = 0) => {
+    const read: TReader<T> = (content, callback, start) => {
         const len = content.length
         let leftStart = start
         for (let i = start; i < len; i++) {
             let token: TToken<T> = null
-            if (agents.some(r => {
-                token = r(content, i, parent, previous)
+            if (agents.some((r, readerId) => {
+                token = r(content, i, parent, previous, readerId, 0)
                 return !!token
             })) {
                 if (token.start - leftStart > 0) {
                     const leftToken: TToken<T> = {
+                        readerGroup: 0,
+                        readerId: -1,
                         weight: 0,
                         type: leftType,
                         originType: leftType,
@@ -238,6 +237,8 @@ export const charReader = <T>(agents: TAgent<T>[], leftType: T): TReader<T> => {
         }
         if (leftStart < content.length) {
             const leftToken: TToken<T> = {
+                readerGroup: 0,
+                readerId: -1,
                 weight: 0,
                 type: leftType,
                 originType: leftType,
@@ -250,6 +251,55 @@ export const charReader = <T>(agents: TAgent<T>[], leftType: T): TReader<T> => {
             }
             callback(leftToken)
         }
+        return len
     }
     return read
+}
+
+export const multiReader = <TT>(agentsMain: TAgent<TT>[], ...agentsHelpers: TAgent<TT>[][]): TReader<TT> => {
+
+    const groups = [agentsMain, ...agentsHelpers]
+
+    const read = (
+        content: string,
+        callback: { (node: TToken<TT>): void },
+        start: number = 0,
+        parent: TToken<TT> = null,
+        previous: TToken<TT> = null
+    ): number => {
+        
+        const tmp = start
+        groups.forEach((agents, groupIndex) => {
+            const m = content.substring(start).match(/^\s+/)
+            if (m) {
+                start += m[0].length
+            }
+
+            let bingo = agentBingo(agents, content, start, parent, previous, groupIndex)
+            if (bingo) {
+                callback(bingo.token)
+                parent = bingo.parent
+                previous = bingo.previous
+                start = bingo.token.end
+            }
+        })
+        if(tmp === start) {
+            return tmp
+        } else {
+            return read(content, callback, start, parent, previous)
+        }
+    }
+
+    return read
+}
+
+export const combinParserCallbackFactory = <S, T>(reducer: { (token: TToken<T>, stack: S): void }, ...factories: TReaderCallbackFactory<S, T>[]): TReaderCallbackFactory<S, T> => (stack) => {
+    const callbacks = factories.map(f => f(stack))
+    return token => {
+        const cb = callbacks[token.readerGroup]
+        if(typeof cb === 'function') {
+            cb(token)
+            typeof reducer === 'function' && reducer(token, stack)
+        }
+    }
 }
