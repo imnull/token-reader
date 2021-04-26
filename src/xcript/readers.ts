@@ -8,12 +8,7 @@ import { readers as jsonxReaders, TJsonTokenType as J } from '../jsonx/index'
 export const readers = [
     // agent<X>('comma', ',', 0, 30),
     // agent<X>('colon', ':', 0, 30),
-    // agent<X>('semicolon', ';', 0, 30, [({ assets, parent }) => {
-    //     if(parent && parent.type === 'declare') {
-    //         return [';', ';', 'declare-end', 2]
-    //     }
-    //     return assets
-    // }]),
+    agent<X>('semicolon', ';', 0, 30),
     // agent<X>('bracket-round', '(', 1, 30),
     // agent<X>('bracket-round-end', ')', 2, 30),
     // agent<X>('bracket-square', '[', 1, 30),
@@ -24,7 +19,7 @@ export const readers = [
     // agent<X>('null', 'null', 0, 20),
     // agent<X>('undefined', 'undefined', 0, 20),
 
-    // agent<X>('assign', '=', 0, 30),
+    agent<X>('assign', '=', 0, 30),
 
     agent<X>('logical', ['&&', '||'], 0, 30),
 
@@ -41,7 +36,7 @@ export const readers = [
 
     
 
-    // agent<X>('declare', 'var', 1, 10),
+    agent<X>('declare', 'var', 0, 10),
     // agent<X>('declare-end', (s, i, parent) => {
     //     if(parent && parent.type === 'declare') {
     //         if(s.length === i) {

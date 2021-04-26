@@ -4,4 +4,4 @@ import * as xdom from './xdom/index'
 import * as xcript from './xcript/index'
 import * as utils from './utils'
 
-export { jsonx, xmlx, xdom, xcript, utils }
+export { jsonx, xmlx, xcript, xdom, utils }

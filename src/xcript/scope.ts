@@ -1,6 +1,6 @@
 export class ScopeItem {
     public readonly name: string
-    private readonly parent: Scope
+    public readonly parent: Scope
     constructor(name: string, parent: Scope) {
         this.name = name
         this.parent = parent
@@ -30,15 +30,27 @@ export class Scope {
         return item
     }
 
+    has(name: string) {
+        return name in this.scope
+    }
+
     getValue(name: string) {
         const item = this.getValueItem(name)
         return item.status === 1 ? item.value : void(0)
+    }
+
+    getKind(name: string) {
+        if(!this.has(name)) {
+            return null
+        }
+        return this.scope[name].kind
     }
 
     setValue(name: string, value: any) {
         const item = this.getValueItem(name)
         item.status = 1
         item.value = value
+        return value
     }
 
     extract(name: string) {

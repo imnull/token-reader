@@ -15,7 +15,7 @@ export const createReaderCallback: TReaderCallbackFactory<XDocument, TXmlTokenTy
                 const el = stack.createElement(node.value)
                 cursor.appendChild(el)
                 cursor = el
-                break
+                return true
             case 'element-close':
                 let n = cursor
                 while (n) {
@@ -28,36 +28,37 @@ export const createReaderCallback: TReaderCallbackFactory<XDocument, TXmlTokenTy
                     n.isClosed = true
                     cursor = n.parentNode || stack
                 }
-                break
+                return true
             case 'attribute-name':
                 attr = node
                 cursor.attributes.setAttribute(node.value, null)
-                break
+                return true
             case 'attribute-value':
                 cursor.attributes.setAttribute(attr.value, node.value)
-                break
+                return true
             case 'element-blank':
                 cursor.attributes.appendBlank(node.value)
-                break
+                return true
             case 'element-single':
                 cursor.isSingle = true
                 cursor.attributes.trimEnd()
                 cursor = cursor.parentNode || stack
-                break
+                return true
             case 'element-end':
                 cursor.isSingle = false
                 cursor.attributes.trimEnd()
-                break
+                return true
             case 'text':
                 cursor.appendChild(stack.createTextNode(node.value))
-                break
+                return true
             case 'comment':
                 cursor.appendChild(stack.createCommen(node.value))
-                break
+                return true
             case 'instruction':
                 cursor.appendChild(stack.createInstruction(node.value))
-                break
+                return true
         }
+        return false
     }
 }
 

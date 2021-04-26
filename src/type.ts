@@ -19,9 +19,9 @@ export type TAgent<T> = {
 }
 
 
-export type TReaderCallback<T> = { (node: TToken<T>): void }
+export type TReaderCallback<T> = { (node: TToken<T>, ...args: any[]): boolean }
 
-export type TReaderCallbackFactory<S, T> = { (stack: S): TReaderCallback<T> }
+export type TReaderCallbackFactory<S, T> = { (stack: S, ...args: any[]): TReaderCallback<T> }
 
 export type TReader<T> = {
     (content: string, callback: TReaderCallback<T>, start: number): number

@@ -65,45 +65,45 @@ const emptyStack = (stack: any[], type: any, clear: boolean = false) => {
     }
 }
 
-const update = (stack: any[], node: TToken<J>) => {
+const update = (stack: any[], node: TToken<J>): boolean => {
     switch(node.type) {
         case 'bracket-round':
             stack.push(getNodeValue(node))
             stack.push(void(0))
-            break
+            return true
         case 'bracket-round-comma':
             if(stepUp(stack, BRACKET_ROUND_SYMBOL) === 2) {
                 const tmp = stack.pop()
                 stack[stack.length - 1] = tmp
             }
-            break
+            return true
         case 'bracket-round-end':
             const parenthesesVal = stack.pop()
             emptyStack(stack, BRACKET_ROUND_SYMBOL, true)
             stack.push(parenthesesVal)
-            break
+            return true
         case 'bracket-wind':
             stack.push(getNodeValue(node))
             stack.push({})
-            break
+            return true
         case 'bracket-wind-comma':
             if(stepUp(stack, BRACKET_WIND_SYMBOL) === 3) {
                 const propVal = stack.pop()
                 const propName = stack.pop()
                 stack[stack.length - 1][propName] = propVal
             }
-            break
+            return true
         case 'bracket-wind-end':
             if(stepUp(stack, BRACKET_WIND_SYMBOL) === 2) {
                 stack.push(stack[stack.length - 1])
             }
             endNest(stack, BRACKET_WIND_SYMBOL)
-            break
+            return true
         case 'bracket-square':
             stack.push(getNodeValue(node))
             stack.push([])
             stack.push(0)
-            break
+            return true
         case 'bracket-square-comma':
             const settingStep = stepUp(stack, BRACKET_SQUARE_SYMBOL)
             if(settingStep === 3) {
@@ -114,13 +114,13 @@ const update = (stack: any[], node: TToken<J>) => {
             } else if(settingStep === 2) {
                 stack[stack.length - 1] += 1
             }
-            break
+            return true
         case 'bracket-square-end':
             if(stepUp(stack, BRACKET_SQUARE_SYMBOL) === 2) {
                 stack.pop()
             }
             endNest(stack, BRACKET_SQUARE_SYMBOL)
-            break
+            return true
         case 'id':
         case 'date':
         case 'string':
@@ -129,13 +129,13 @@ const update = (stack: any[], node: TToken<J>) => {
         case 'boolean':
         case 'undefined':
             stack.push(getNodeValue(node))
-            break
+            return true
     }
-    
+    return false
 }
 
 export const createReaderCallback: TReaderCallbackFactory<any[], J> = stack => node => {
-    update(stack, node)
+    return update(stack, node)
 }
 
 export const parse: TParser = (content, start = 0) => {

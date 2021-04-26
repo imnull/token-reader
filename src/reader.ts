@@ -294,13 +294,20 @@ export const multiRecurrentReader = <TT>(agentsMain: TAgent<TT>[], ...agentsHelp
     return read
 }
 
-export const combinTokenParserCallback = <S, T>(reducer: { (token: TToken<T>, stack: S): void }, ...factories: TRCF<S, T>[]): TRCF<S, T> => (stack) => {
-    const callbacks = factories.map(f => f(stack))
-    return token => {
-        const cb = callbacks[token.readerGroup]
-        if(typeof cb === 'function') {
-            cb(token)
-            typeof reducer === 'function' && reducer(token, stack)
-        }
+export const combinTokenParserCallback = <S, T>(reducer: { (stack: S, token: TToken<T>, ...args: any[]): void }, ...factories: TRCF<S, T>[]): TRCF<S, T> => (stack, ...args: any[]) => {
+    const callbacks = factories.map(f => f(stack, ...args))
+    return (token, ...args) => {
+        // const cb = callbacks[token.readerGroup]
+        return callbacks.some(cb => {
+            const b = cb(token, ...args)
+            if(b) {
+                typeof reducer === 'function' && reducer(stack, token, ...args)
+            }
+            return b
+        })
+        // if(typeof cb === 'function') {
+        //     cb(token, ...args)
+        //     typeof reducer === 'function' && reducer(stack, token, ...args)
+        // }
     }
 }
