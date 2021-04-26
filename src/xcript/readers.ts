@@ -1,7 +1,6 @@
 import { readQuote } from '../utils'
-import { agent, recurrentReader, multiReader } from '../reader'
+import { agent, multiRecurrentReader } from '../reader'
 import { TXcriptTokenType as X } from './type'
-import { REG_NUMBER, REG_ID, readString } from '../readers'
 
 import { readers as jsonxReaders, TJsonTokenType as J } from '../jsonx/index'
 
@@ -27,9 +26,18 @@ export const readers = [
 
     // agent<X>('assign', '=', 0, 30),
 
+    agent<X>('logical', ['&&', '||'], 0, 30),
+
     agent<X>('binary', [
         '+', '-', '*', '/', '%', '^', '|', '&', '>>>', '>>', '<<', '>=', '>', '<=', '<', '===', '==', '!==', '!='
-    ], 0, 50),
+    ], 0, 20, ({ assets, previous }) => {
+        if(!previous || previous.type === 'binary' || previous.type === 'unary') {
+            return null
+        }
+        return assets
+    }),
+    
+    agent<X>('unary', ['+', '-', '~', '!', 'typeof', 'void'], 0, 10),
 
     
 
@@ -63,4 +71,4 @@ export const readers = [
 ]
 
 // export const read = recurrentReader<T>(readers)
-export const read = multiReader<X | J>(readers, jsonxReaders)
+export const read = multiRecurrentReader<X | J>(readers, jsonxReaders)

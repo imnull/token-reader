@@ -7,6 +7,7 @@ export const readers = [
     agent<T>('null', 'null', 0),
     agent<T>('undefined', 'undefined', 0),
     agent<T>('date', REG_DATE, 0),
+    agent<T>('boolean', ['true', 'false'], 0),
     agent<T>('id', REG_ID, 0),
     agent<T>('number', REG_NUMBER, 0),
     agent<T>('string', readString, 0),

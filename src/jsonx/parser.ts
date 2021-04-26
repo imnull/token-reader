@@ -12,6 +12,8 @@ const getNodeValue = (node: TToken<J>) => {
             return Number(node.value)
         case 'date':
             return new Date(node.value)
+        case 'boolean':
+            return node.value === 'true'
         case 'null':
             return null
         case 'undefined':
@@ -124,6 +126,7 @@ const update = (stack: any[], node: TToken<J>) => {
         case 'string':
         case 'number':
         case 'null':
+        case 'boolean':
         case 'undefined':
             stack.push(getNodeValue(node))
             break

@@ -1,4 +1,4 @@
-import { TReader, TToken, TAgent, TAgentFunction, TAgentAssets, TPlugin, TReaderCallbackFactory } from './type'
+import { TReader, TToken, TAgent, TAgentFunction, TAgentAssets, TPlugin, TReaderCallbackFactory as TRCF } from './type'
 import { REG_BREAK } from './readers'
 
 const buildToken = <T>(token: TToken<T>, seg: TAgentAssets<T>): TToken<T> => {
@@ -256,7 +256,7 @@ export const charReader = <T>(agents: TAgent<T>[], leftType: T): TReader<T> => {
     return read
 }
 
-export const multiReader = <TT>(agentsMain: TAgent<TT>[], ...agentsHelpers: TAgent<TT>[][]): TReader<TT> => {
+export const multiRecurrentReader = <TT>(agentsMain: TAgent<TT>[], ...agentsHelpers: TAgent<TT>[][]): TReader<TT> => {
 
     const groups = [agentsMain, ...agentsHelpers]
 
@@ -269,7 +269,7 @@ export const multiReader = <TT>(agentsMain: TAgent<TT>[], ...agentsHelpers: TAge
     ): number => {
         
         const tmp = start
-        groups.forEach((agents, groupIndex) => {
+        groups.some((agents, groupIndex) => {
             const m = content.substring(start).match(/^\s+/)
             if (m) {
                 start += m[0].length
@@ -281,6 +281,7 @@ export const multiReader = <TT>(agentsMain: TAgent<TT>[], ...agentsHelpers: TAge
                 parent = bingo.parent
                 previous = bingo.previous
                 start = bingo.token.end
+                return true
             }
         })
         if(tmp === start) {
@@ -293,7 +294,7 @@ export const multiReader = <TT>(agentsMain: TAgent<TT>[], ...agentsHelpers: TAge
     return read
 }
 
-export const combinParserCallbackFactory = <S, T>(reducer: { (token: TToken<T>, stack: S): void }, ...factories: TReaderCallbackFactory<S, T>[]): TReaderCallbackFactory<S, T> => (stack) => {
+export const combinTokenParserCallback = <S, T>(reducer: { (token: TToken<T>, stack: S): void }, ...factories: TRCF<S, T>[]): TRCF<S, T> => (stack) => {
     const callbacks = factories.map(f => f(stack))
     return token => {
         const cb = callbacks[token.readerGroup]
