@@ -19,22 +19,21 @@ export const readers = [
     // agent<X>('null', 'null', 0, 20),
     // agent<X>('undefined', 'undefined', 0, 20),
 
-    agent<X>('assign', '=', 0, 30),
 
-    agent<X>('logical', ['&&', '||'], 0, 30),
+    agent<X>('logical', ['&&', '||'], 0, 60),
 
     agent<X>('binary', [
         '+', '-', '*', '/', '%', '^', '|', '&', '>>>', '>>', '<<', '>=', '>', '<=', '<', '===', '==', '!==', '!='
-    ], 0, 20, ({ assets, previous }) => {
+    ], 0, 50, ({ assets, previous }) => {
         if(!previous || previous.type === 'binary' || previous.type === 'unary') {
             return null
         }
         return assets
     }),
+
+    agent<X>('assign', '=', 0, 10),
     
     agent<X>('unary', ['+', '-', '~', '!', 'typeof', 'void'], 0, 10),
-
-    
 
     agent<X>('declare', 'var', 0, 10),
     // agent<X>('declare-end', (s, i, parent) => {

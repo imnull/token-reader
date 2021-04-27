@@ -10,21 +10,33 @@ import { binary, logical, unary } from './helper'
 import { BranchNode, traverse } from '../branch'
 import {
     TAstNode,
+    TNode,
+    TBinaryOperator,
+    TLogicalOperator,
+    TUnaryOperator,
     Program,
     NumberLiteral,
     StringLiteral,
     Null,
     Undefined,
-    Identifier
+    Identifier,
+    BinaryExpression,
+    BooleanLiteral,
+    LogicalExpression,
+    UnaryExpression,
 } from './ast'
 
 type TT = X | J
 
-const MAP: { [k in TT]?: { (token: TToken<TT>): TAstNode } } = {
-    'number': token => new NumberLiteral(Number(token.value)),
-    'string': token => new StringLiteral(token.value),
-    'null': () => new Null(),
-    'undefined': () => new Undefined(),
+const MAP: { [k in TT]?: { (token: TToken<TT>, parent: TNode): TNode } } = {
+    'number': (token, parent) => new NumberLiteral(parent, Number(token.value)),
+    'string': (token, parent) => new StringLiteral(parent, token.value),
+    'boolean': (token, parent) => new BooleanLiteral(parent, token.value === 'true'),
+    'null': (token, parent) => new Null(parent),
+    'undefined': (token, parent) => new Undefined(parent),
+    'binary': (token, parent) => new BinaryExpression(parent, token.value as TBinaryOperator),
+    'logical': (token, parent) => new LogicalExpression(parent, token.value as TLogicalOperator),
+    'unary': (token, parent) => new UnaryExpression(parent, token.value as TUnaryOperator),
 }
 
 export const createCallback: TRCF<any[], TT> = (stack, scope: Scope) => (token, prev: TToken<TT>, next: TToken<TT>) => {
@@ -123,20 +135,18 @@ export const createReaderCallback = combinTokenParserCallback((stack, token) => 
     reduceStack(stack)
 }, createCallback, jsonxCreateReaderCallback)
 
-
-
 export const parse: TParser = (content: string, start: number = 0) => {
 
     const program = new Program()
-
-    read(content, (token) => {
-        if(token.type in MAP) {
-            program.body.push(MAP[token.type](token))
-        }
+    let cursor: TNode = program
+    read(content, token => {
+        // console.log(111111, token)
+        const node = MAP[token.type](token, cursor)
+        cursor = cursor.append(node) as TNode
         return true
     }, start)
 
-    console.log(program)
+    console.log(program.body[0])
 
     // const program = new BranchNode<TToken<TT>>({ type: 'program' } as TToken<TT>)
     // let cursor = program
