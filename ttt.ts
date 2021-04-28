@@ -105,10 +105,10 @@ import { REG_DATE } from './src/readers'
 // xcript.parse(`- 3`)
 // xcript.parse(`+ 3`)
 
-xcript.parse(`typeof 0+100`)
+// xcript.parse(`typeof 0+100`)
 // xcript.parse(`typeof '0'+100`)
 // xcript.parse(`void(0)`)
-// xcript.parse(`typeof (0+100)`)
+xcript.parse(`typeof (0+100)`)
 // xcript.parse(`typeof null`)
 // xcript.parse(`typeof undefined`)
 // xcript.parse(`typeof {}`)

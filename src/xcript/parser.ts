@@ -24,6 +24,7 @@ import {
     BooleanLiteral,
     LogicalExpression,
     UnaryExpression,
+    BracketRound,
 } from './ast'
 
 type TT = X | J
@@ -37,6 +38,8 @@ const MAP: { [k in TT]?: { (token: TToken<TT>, parent: TNode): TNode } } = {
     'binary': (token, parent) => new BinaryExpression(parent, token.value as TBinaryOperator),
     'logical': (token, parent) => new LogicalExpression(parent, token.value as TLogicalOperator),
     'unary': (token, parent) => new UnaryExpression(parent, token.value as TUnaryOperator),
+    'bracket-round': (token, parent) => new BracketRound(parent),
+    'bracket-round-end': (token, parent) => new BracketRound(parent),
 }
 
 export const createCallback: TRCF<any[], TT> = (stack, scope: Scope) => (token, prev: TToken<TT>, next: TToken<TT>) => {
@@ -146,7 +149,7 @@ export const parse: TParser = (content: string, start: number = 0) => {
         return true
     }, start)
 
-    console.log(program.body[0])
+    console.log((program.body[0] as any).argument)
 
     // const program = new BranchNode<TToken<TT>>({ type: 'program' } as TToken<TT>)
     // let cursor = program
